@@ -1,0 +1,974 @@
+Index: src/main/java/ru/nsu/ccfit/tihomolov/task3b/game/model/Game.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/src/main/java/ru/nsu/ccfit/tihomolov/task3b/game/model/Game.java b/src/main/java/ru/nsu/ccfit/tihomolov/task3b/game/model/Game.java
+--- a/src/main/java/ru/nsu/ccfit/tihomolov/task3b/game/model/Game.java	
++++ b/src/main/java/ru/nsu/ccfit/tihomolov/task3b/game/model/Game.java	(date 1696772010627)
+@@ -4,7 +4,7 @@
+ import lombok.Getter;
+ import ru.nsu.ccfit.tihomolov.task3b.game.controller.Observer;
+ import ru.nsu.ccfit.tihomolov.task3b.exception.SquareNotFoundException;
+-import ru.nsu.ccfit.tihomolov.task3b.network.HostNetworkInfo;
++import ru.nsu.ccfit.tihomolov.task3b.network.storage.HostNetworkInfo;
+ import ru.nsu.ccfit.tihomolov.task3b.snakes.proto.SnakesProto;
+ 
+ import java.net.InetAddress;
+@@ -108,12 +108,13 @@
+     }
+ 
+ 
+-    public int addPlayer(SnakesProto.GameMessage.JoinMsg joinMsg, InetAddress ip, int port) {
++    public int addPlayer(SnakesProto.GameMessage.JoinMsg joinMsg, HostNetworkInfo hostNetworkInfo) {
+         int id;
+         try {
+             id = playerId;
+-            playersId.put(new HostNetworkInfo(ip, port), playerId);
+-            players.put(playerId, Player.init(playerId, joinMsg.getPlayerType(), joinMsg.getPlayerName(), joinMsg.getRequestedRole(), ip.getHostAddress(), port));
++            playersId.put(hostNetworkInfo, playerId);
++            players.put(playerId, Player.init(playerId, joinMsg.getPlayerType(), joinMsg.getPlayerName(), joinMsg.getRequestedRole(),
++                    String.valueOf(hostNetworkInfo.getIp()), hostNetworkInfo.getPort()));
+             if (joinMsg.getRequestedRole() != SnakesProto.NodeRole.VIEWER) {
+                 snakes.put(playerId, new Snake(field, field.placeForSneak(playerId), playerId));
+             }
+@@ -124,9 +125,9 @@
+         return id;
+     }
+ 
+-    public void addMove(InetAddress inetAddress, int port, SnakesProto.Direction move) {
++    public void addMove(HostNetworkInfo hostNetworkInfo, SnakesProto.Direction move) {
+         Integer playerId;
+-        playerId = playersId.get(new HostNetworkInfo(inetAddress, port));
++        playerId = playersId.get(hostNetworkInfo);
+         snakes.get(playerId).setMove(move);
+     }
+ 
+@@ -169,7 +170,14 @@
+     }
+ 
+     public void checkCrashes() {
+-        snakes.entrySet().removeIf(snakeEntry -> checkCellForSnakes(snakeEntry.getValue()));
++        Iterator<Map.Entry<Integer, Snake>> iterator = snakes.entrySet().iterator();
++        while (iterator.hasNext()) {
++            Map.Entry<Integer, Snake> snakeEntry = iterator.next();
++            if (checkCellForSnakes(snakeEntry.getValue())) {
++                iterator.remove();
++            }
++        }
++        //snakes.entrySet().removeIf(snakeEntry -> checkCellForSnakes(snakeEntry.getValue()));
+     }
+ 
+     public void deleteFromField(Snake snake) {
+Index: src/main/java/ru/nsu/ccfit/tihomolov/task3b/game/model/MainNodeInfo.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/src/main/java/ru/nsu/ccfit/tihomolov/task3b/game/model/MainNodeInfo.java b/src/main/java/ru/nsu/ccfit/tihomolov/task3b/game/model/MainNodeInfo.java
+--- a/src/main/java/ru/nsu/ccfit/tihomolov/task3b/game/model/MainNodeInfo.java	
++++ b/src/main/java/ru/nsu/ccfit/tihomolov/task3b/game/model/MainNodeInfo.java	(date 1696762997896)
+@@ -2,7 +2,7 @@
+ 
+ import lombok.AllArgsConstructor;
+ import lombok.Getter;
+-import ru.nsu.ccfit.tihomolov.task3b.network.HostNetworkInfo;
++import ru.nsu.ccfit.tihomolov.task3b.network.storage.HostNetworkInfo;
+ import ru.nsu.ccfit.tihomolov.task3b.snakes.proto.SnakesProto;
+ 
+ 
+Index: src/main/java/ru/nsu/ccfit/tihomolov/task3b/game/model/GameMessageCreator.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/src/main/java/ru/nsu/ccfit/tihomolov/task3b/game/model/GameMessageCreator.java b/src/main/java/ru/nsu/ccfit/tihomolov/task3b/game/model/GameMessageCreator.java
+--- a/src/main/java/ru/nsu/ccfit/tihomolov/task3b/game/model/GameMessageCreator.java	
++++ b/src/main/java/ru/nsu/ccfit/tihomolov/task3b/game/model/GameMessageCreator.java	(date 1696767598620)
+@@ -54,4 +54,18 @@
+                 .setReceiverId(playerId)
+                 .build();
+     }
++
++    public static SnakesProto.GameMessage initGameMessage(SnakesProto.GameMessage.PingMsg pingMsg) {
++        return SnakesProto.GameMessage.newBuilder()
++                .setMsgSeq(MessageSequence.getMessageSequence())
++                .setPing(pingMsg)
++                .build();
++    }
++
++    public static SnakesProto.GameMessage initGameMessage(SnakesProto.GameMessage.RoleChangeMsg roleChangeMsg) {
++        return SnakesProto.GameMessage.newBuilder()
++                .setMsgSeq(MessageSequence.getMessageSequence())
++                .setRoleChange(roleChangeMsg)
++                .build();
++    }
+ }
+Index: src/main/java/ru/nsu/ccfit/tihomolov/task3b/game/controller/GameController.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/src/main/java/ru/nsu/ccfit/tihomolov/task3b/game/controller/GameController.java b/src/main/java/ru/nsu/ccfit/tihomolov/task3b/game/controller/GameController.java
+--- a/src/main/java/ru/nsu/ccfit/tihomolov/task3b/game/controller/GameController.java	
++++ b/src/main/java/ru/nsu/ccfit/tihomolov/task3b/game/controller/GameController.java	(date 1696767860143)
+@@ -8,6 +8,8 @@
+ import ru.nsu.ccfit.tihomolov.task3b.game.ui.View;
+ import ru.nsu.ccfit.tihomolov.task3b.game.model.Game;
+ import ru.nsu.ccfit.tihomolov.task3b.network.NetworkController;
++import ru.nsu.ccfit.tihomolov.task3b.network.storage.HostNetworkInfo;
++import ru.nsu.ccfit.tihomolov.task3b.network.storage.NodeInfo;
+ import ru.nsu.ccfit.tihomolov.task3b.snakes.proto.SnakesProto;
+ import java.net.InetAddress;
+ import java.util.List;
+@@ -47,22 +49,24 @@
+         this.game.startGame();
+         this.role = SnakesProto.NodeRole.MASTER;
+         networkController.startMessageScheduler(gameConfig.getStateDelayMs());
++        networkController.setSelfRole(role);
+         startAnnouncementMsg(game.getAnnouncementMsg());
+         this.view.openGameWindow(gameConfig, this);
+     }
+ 
+-    public void steerMessage(SnakesProto.GameMessage.SteerMsg steerMsg, InetAddress ip, int port) {
+-        game.addMove(ip, port, steerMsg.getDirection());
++    public void steerMessage(SnakesProto.GameMessage.SteerMsg steerMsg, HostNetworkInfo hostNetworkInfo) {
++        game.addMove(hostNetworkInfo, steerMsg.getDirection());
+     }
+ 
+-    public int joinMessage(SnakesProto.GameMessage.JoinMsg joinMsg, InetAddress ip, int port) {
++    public int joinMessage(SnakesProto.GameMessage.JoinMsg joinMsg, HostNetworkInfo hostNetworkInfo) {
+         log.info(joinMsg.getPlayerName());
+-        return game.addPlayer(joinMsg, ip, port);
++        networkController.setSelfRole(joinMsg.getRequestedRole());
++        return game.addPlayer(joinMsg, hostNetworkInfo);
+     }
+ 
+     public void addMove(InetAddress ip, int port, SnakesProto.Direction move) {
+         if (role == SnakesProto.NodeRole.MASTER) {
+-            game.addMove(ip, port, move);
++            game.addMove(new HostNetworkInfo(ip, port), move);
+         } else {
+             networkController.addMessage(curGameInfo.getGameName(), GameMessageCreator.initGameMessage(
+                                                                         SnakesProto.GameMessage.SteerMsg
+@@ -118,4 +122,8 @@
+         log.info("Send joinMsg to " + gameInfo.getGameName());
+         networkController.addMessage(gameInfo.getGameName(), GameMessageCreator.initGameMessage(joinMsg));
+     }
++
++    public SnakesProto.NodeRole checkDeputy(SnakesProto.NodeRole role) {
++        return networkController.checkDeputy(role);
++    }
+ }
+Index: src/main/java/ru/nsu/ccfit/tihomolov/task3b/game/controller/MessageHandler.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/src/main/java/ru/nsu/ccfit/tihomolov/task3b/game/controller/MessageHandler.java b/src/main/java/ru/nsu/ccfit/tihomolov/task3b/game/controller/MessageHandler.java
+--- a/src/main/java/ru/nsu/ccfit/tihomolov/task3b/game/controller/MessageHandler.java	
++++ b/src/main/java/ru/nsu/ccfit/tihomolov/task3b/game/controller/MessageHandler.java	(date 1696773569644)
+@@ -3,9 +3,10 @@
+ import com.google.protobuf.InvalidProtocolBufferException;
+ import lombok.extern.slf4j.Slf4j;
+ import ru.nsu.ccfit.tihomolov.task3b.game.model.GameMessageCreator;
+-import ru.nsu.ccfit.tihomolov.task3b.network.HostNetworkInfo;
+-import ru.nsu.ccfit.tihomolov.task3b.network.Message;
+-import ru.nsu.ccfit.tihomolov.task3b.network.NetworkStorage;
++import ru.nsu.ccfit.tihomolov.task3b.network.storage.HostNetworkInfo;
++import ru.nsu.ccfit.tihomolov.task3b.network.storage.Message;
++import ru.nsu.ccfit.tihomolov.task3b.network.storage.NetworkStorage;
++import ru.nsu.ccfit.tihomolov.task3b.network.storage.NodeInfo;
+ import ru.nsu.ccfit.tihomolov.task3b.snakes.proto.SnakesProto;
+ 
+ import java.net.DatagramPacket;
+@@ -45,12 +46,12 @@
+     @Override
+     public void run() {
+         log.info("Start execute");
+-        int port = packet.getPort();
++        HostNetworkInfo hostNetworkInfo = new HostNetworkInfo(packet.getAddress(), packet.getPort());
+         try {
+             SnakesProto.GameMessage gameMessage = SnakesProto.GameMessage.parseFrom(Arrays.copyOfRange(packet.getData(), 0, packet.getLength()));
+             log.info("Handle message " + gameMessage.getTypeCase().name() + " " + gameMessage.getReceiverId());
+             switch (gameMessage.getTypeCase()) {
+-                case PING -> {}
++                case PING -> sendAckMessage(gameMessage);
+                 case ACK -> {
+                     if (gameMessage.getReceiverId() > 0) {
+                         controller.openJoinGame();
+@@ -59,34 +60,55 @@
+                 }
+                 case STEER -> {
+                     sendAckMessage(gameMessage);
+-                    controller.steerMessage(gameMessage.getSteer(), packet.getAddress(), port);
++                    controller.steerMessage(gameMessage.getSteer(), hostNetworkInfo);
+                 }
+                 case STATE -> {
+                     sendAckMessage(gameMessage);
+                     controller.updateGameState(gameMessage.getState().getState());
+                 }
+-                case JOIN -> {
+-                    int playerId = controller.joinMessage(gameMessage.getJoin(), packet.getAddress(), port);
+-                    System.out.println("PlayerId: " + playerId);
+-                    addToPlayersIfJoin(playerId);
+-                    sendAnswer(playerId, gameMessage);
+-                }
++                case JOIN -> joinHandler(gameMessage, hostNetworkInfo);
+                 case ERROR -> sendAckMessage(gameMessage);
+-                case ROLE_CHANGE -> {}
++                case ROLE_CHANGE -> {
++                    sendAckMessage(gameMessage);
++                    handleChangeRole(gameMessage.getRoleChange(), hostNetworkInfo);
++                }
+                 case DISCOVER -> {}
+-                case TYPE_NOT_SET -> {
+-                    throw new RuntimeException("no such command");
+-                }
++                case TYPE_NOT_SET -> throw new RuntimeException("no such command");
+             }
++            networkStorage.getPlayers().get(hostNetworkInfo).updateTime();
+         } catch (InvalidProtocolBufferException e) {
+             log.error(e.getMessage());
+             throw new RuntimeException(e);
+         }
+     }
+ 
+-    private void addToPlayersIfJoin(int playerId) {
++    private void joinHandler(SnakesProto.GameMessage gameMessage, HostNetworkInfo hostNetworkInfo) {
++        SnakesProto.GameMessage.JoinMsg joinMsg = gameMessage.getJoin();
++        int playerId = controller.joinMessage(joinMsg, hostNetworkInfo);
++        System.out.println("PlayerId: " + playerId);
++        addToPlayersIfJoin(playerId, joinMsg.getRequestedRole());
++        sendAnswer(playerId, gameMessage);
++        /*if (controller.checkDeputy(joinMsg.getRequestedRole()) == SnakesProto.NodeRole.DEPUTY) {
++            networkStorage.addToMessageToSend(new Message(GameMessageCreator.initGameMessage(SnakesProto.GameMessage.RoleChangeMsg.newBuilder()
++                    .setReceiverRole(SnakesProto.NodeRole.DEPUTY)
++                    .build()
++            ), hostNetworkInfo));
++        }*/
++    }
++
++    private void handleChangeRole(SnakesProto.GameMessage.RoleChangeMsg roleChangeMsg, HostNetworkInfo hostNetworkInfo) {
++        if (roleChangeMsg.hasReceiverRole()) {
++            networkStorage.getMainRoles().setSelf(roleChangeMsg.getReceiverRole());
++        } else if(roleChangeMsg.getReceiverRole() == SnakesProto.NodeRole.DEPUTY) {
++            networkStorage.getMainRoles().setDeputy(hostNetworkInfo);
++        } else {
++            networkStorage.getMainRoles().setMaster(hostNetworkInfo);
++        }
++    }
++
++    private void addToPlayersIfJoin(int playerId, SnakesProto.NodeRole role) {
+         if (playerId > 0) {
+-            networkStorage.getPlayers().add(new HostNetworkInfo(packet.getAddress(), packet.getPort()));
++            networkStorage.getPlayers().put(new HostNetworkInfo(packet.getAddress(), packet.getPort()), new NodeInfo(role));
+         }
+     }
+ }
+Index: src/main/java/ru/nsu/ccfit/tihomolov/task3b/network/udp/SenderUDP.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/src/main/java/ru/nsu/ccfit/tihomolov/task3b/network/udp/SenderUDP.java b/src/main/java/ru/nsu/ccfit/tihomolov/task3b/network/udp/SenderUDP.java
+--- a/src/main/java/ru/nsu/ccfit/tihomolov/task3b/network/udp/SenderUDP.java	
++++ b/src/main/java/ru/nsu/ccfit/tihomolov/task3b/network/udp/SenderUDP.java	(date 1696773622860)
+@@ -1,11 +1,10 @@
+ package ru.nsu.ccfit.tihomolov.task3b.network.udp;
+ 
+ import lombok.extern.slf4j.Slf4j;
+-import ru.nsu.ccfit.tihomolov.task3b.network.NetworkStorage;
+-import ru.nsu.ccfit.tihomolov.task3b.network.SentMessage;
++import ru.nsu.ccfit.tihomolov.task3b.network.storage.NetworkStorage;
++
+ import java.io.IOException;
+ import java.net.DatagramSocket;
+-import static ru.nsu.ccfit.tihomolov.task3b.context.Context.PERIOD;
+ 
+ @Slf4j
+ public class SenderUDP implements Runnable {
+@@ -22,22 +21,19 @@
+             synchronized (datagramSocket) {
+                 for (var message : networkStorage.getMessagesForSend()) {
+                     try {
+-                        //log.info("Send " + message.type().name());
+                         if (message.getSendTime() != null) continue;
+                         datagramSocket.send(message.getDatagramPacket());
+                         message.setSendTime(System.currentTimeMillis());
+-                        //networkStorage.getSentMessage().put(message.msgSeq(), new SentMessage(System.currentTimeMillis(), message));
+-                        //networkStorage.removeFromMessageToSend(message);
++                        networkStorage.setLastSendTime(System.currentTimeMillis());
+                     } catch (IOException e) {
+                         throw new RuntimeException(e);
+                     }
+                 }
+-                datagramSocket.notifyAll();
+-            }
+-            try {
+-                Thread.sleep(PERIOD);
+-            } catch (InterruptedException e) {
+-                throw new RuntimeException(e);
++                try {
++                    Thread.sleep(5);
++                } catch (InterruptedException e) {
++                    throw new RuntimeException(e);
++                }
+             }
+         }
+     }
+Index: src/main/java/ru/nsu/ccfit/tihomolov/task3b/network/udp/ServiceUDP.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/src/main/java/ru/nsu/ccfit/tihomolov/task3b/network/udp/ServiceUDP.java b/src/main/java/ru/nsu/ccfit/tihomolov/task3b/network/udp/ServiceUDP.java
+--- a/src/main/java/ru/nsu/ccfit/tihomolov/task3b/network/udp/ServiceUDP.java	
++++ b/src/main/java/ru/nsu/ccfit/tihomolov/task3b/network/udp/ServiceUDP.java	(date 1696762997888)
+@@ -2,7 +2,7 @@
+ 
+ import lombok.extern.slf4j.Slf4j;
+ import ru.nsu.ccfit.tihomolov.task3b.game.controller.GameController;
+-import ru.nsu.ccfit.tihomolov.task3b.network.NetworkStorage;
++import ru.nsu.ccfit.tihomolov.task3b.network.storage.NetworkStorage;
+ import java.net.DatagramSocket;
+ import java.net.SocketException;
+ 
+Index: src/main/java/ru/nsu/ccfit/tihomolov/task3b/network/udp/ReceiverUDP.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/src/main/java/ru/nsu/ccfit/tihomolov/task3b/network/udp/ReceiverUDP.java b/src/main/java/ru/nsu/ccfit/tihomolov/task3b/network/udp/ReceiverUDP.java
+--- a/src/main/java/ru/nsu/ccfit/tihomolov/task3b/network/udp/ReceiverUDP.java	
++++ b/src/main/java/ru/nsu/ccfit/tihomolov/task3b/network/udp/ReceiverUDP.java	(date 1696773622866)
+@@ -3,14 +3,11 @@
+ import lombok.extern.slf4j.Slf4j;
+ import ru.nsu.ccfit.tihomolov.task3b.game.controller.GameController;
+ import ru.nsu.ccfit.tihomolov.task3b.game.controller.MessageHandler;
+-import ru.nsu.ccfit.tihomolov.task3b.network.HostNetworkInfo;
+-import ru.nsu.ccfit.tihomolov.task3b.network.NetworkStorage;
++import ru.nsu.ccfit.tihomolov.task3b.network.storage.NetworkStorage;
+ 
+ import java.io.IOException;
+ import java.net.DatagramPacket;
+ import java.net.DatagramSocket;
+-import java.util.Timer;
+-import java.util.TimerTask;
+ import java.util.concurrent.Executors;
+ import java.util.concurrent.ThreadPoolExecutor;
+ 
+@@ -40,12 +37,11 @@
+                 while (System.currentTimeMillis() - timeOFStartReceive < PERIOD) {
+                     receive();
+                 }
+-                datagramSocket.notifyAll();
+-            }
+-            try {
+-                Thread.sleep(PERIOD);
+-            } catch (InterruptedException e) {
+-                throw new RuntimeException(e);
++                try {
++                    Thread.sleep(5);
++                } catch (InterruptedException e) {
++                    throw new RuntimeException(e);
++                }
+             }
+         }
+     }
+Index: src/main/java/ru/nsu/ccfit/tihomolov/task3b/network/udp/PlayersScheduler.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/src/main/java/ru/nsu/ccfit/tihomolov/task3b/network/udp/PlayersScheduler.java b/src/main/java/ru/nsu/ccfit/tihomolov/task3b/network/udp/PlayersScheduler.java
+new file mode 100644
+--- /dev/null	(date 1696773875060)
++++ b/src/main/java/ru/nsu/ccfit/tihomolov/task3b/network/udp/PlayersScheduler.java	(date 1696773875060)
+@@ -0,0 +1,36 @@
++package ru.nsu.ccfit.tihomolov.task3b.network.udp;
++
++import ru.nsu.ccfit.tihomolov.task3b.game.model.GameMessageCreator;
++import ru.nsu.ccfit.tihomolov.task3b.network.storage.MainRoles;
++import ru.nsu.ccfit.tihomolov.task3b.network.storage.Message;
++import ru.nsu.ccfit.tihomolov.task3b.network.storage.NetworkStorage;
++import ru.nsu.ccfit.tihomolov.task3b.snakes.proto.SnakesProto;
++
++import java.net.DatagramPacket;
++
++public class PlayersScheduler implements Runnable {
++    private final NetworkStorage networkStorage;
++    private final long delay;
++    public PlayersScheduler(NetworkStorage networkStorage, long delay) {
++        this.networkStorage = networkStorage;
++        this.delay = delay / 10;
++    }
++
++    @Override
++    public void run() {
++        while (!Thread.currentThread().isInterrupted()) {
++            /*if (networkStorage.getMainRoles().getSelf() != SnakesProto.NodeRole.MASTER && System.currentTimeMillis() - networkStorage.getLastSendTime() > delay) {
++                SnakesProto.GameMessage gameMessage = GameMessageCreator.initGameMessage(SnakesProto.GameMessage.PingMsg.newBuilder().build());
++                networkStorage.addToMessageToSend(new Message(gameMessage, networkStorage.getMainRoles().getMaster()));
++            }*/
++            /*networkStorage.getPlayers()
++                    .values()
++                    .forEach(nodeInfo -> {
++                                if (System.currentTimeMillis() - nodeInfo.getTime() > delay) {
++
++                                }
++                            }
++                    );*/
++        }
++    }
++}
+Index: src/main/java/ru/nsu/ccfit/tihomolov/task3b/network/storage/Message.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/src/main/java/ru/nsu/ccfit/tihomolov/task3b/network/storage/Message.java b/src/main/java/ru/nsu/ccfit/tihomolov/task3b/network/storage/Message.java
+new file mode 100644
+--- /dev/null	(date 1696765904434)
++++ b/src/main/java/ru/nsu/ccfit/tihomolov/task3b/network/storage/Message.java	(date 1696765904434)
+@@ -0,0 +1,38 @@
++package ru.nsu.ccfit.tihomolov.task3b.network.storage;
++
++import lombok.AllArgsConstructor;
++import lombok.Getter;
++import lombok.Setter;
++import ru.nsu.ccfit.tihomolov.task3b.snakes.proto.SnakesProto;
++
++import java.net.DatagramPacket;
++import java.net.InetAddress;
++
++@Getter
++public class Message {
++    private final long msgSeq;
++    private final DatagramPacket datagramPacket;
++    private final SnakesProto.GameMessage.TypeCase type;
++    @Setter
++    private Long sendTime = null;
++
++    public Message(SnakesProto.GameMessage gameMessage, HostNetworkInfo hostNetworkInfo) {
++        this.datagramPacket = new DatagramPacket(gameMessage.toByteArray(), gameMessage.getSerializedSize(),
++                hostNetworkInfo.getIp(), hostNetworkInfo.getPort());
++        this.type = gameMessage.getTypeCase();
++        this.msgSeq = gameMessage.getMsgSeq();
++    }
++
++    public Message(SnakesProto.GameMessage gameMessage, InetAddress ip, int port) {
++        this.datagramPacket = new DatagramPacket(gameMessage.toByteArray(), gameMessage.getSerializedSize(), ip, port);
++        this.type = gameMessage.getTypeCase();
++        this.msgSeq = gameMessage.getMsgSeq();
++    }
++
++    public Message(long messageSeq, SnakesProto.GameMessage gameMessage, SnakesProto.GameMessage.TypeCase type,
++                                      InetAddress ip, int port) {
++        this.msgSeq = messageSeq;
++        this.datagramPacket = new DatagramPacket(gameMessage.toByteArray(), gameMessage.getSerializedSize(), ip, port);
++        this.type = type;
++    }
++}
+Index: src/main/java/ru/nsu/ccfit/tihomolov/task3b/network/storage/NodeInfo.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/src/main/java/ru/nsu/ccfit/tihomolov/task3b/network/storage/NodeInfo.java b/src/main/java/ru/nsu/ccfit/tihomolov/task3b/network/storage/NodeInfo.java
+new file mode 100644
+--- /dev/null	(date 1696764513661)
++++ b/src/main/java/ru/nsu/ccfit/tihomolov/task3b/network/storage/NodeInfo.java	(date 1696764513661)
+@@ -0,0 +1,22 @@
++package ru.nsu.ccfit.tihomolov.task3b.network.storage;
++
++import lombok.AllArgsConstructor;
++import lombok.Getter;
++import lombok.Setter;
++import ru.nsu.ccfit.tihomolov.task3b.snakes.proto.SnakesProto;
++
++@Getter
++public class NodeInfo {
++    private Long time;
++
++    @Setter
++    private SnakesProto.NodeRole role;
++
++    public NodeInfo(SnakesProto.NodeRole role) {
++        this.role = role;
++    }
++
++    public void updateTime() {
++        this.time = System.currentTimeMillis();
++    }
++}
+Index: src/main/java/ru/nsu/ccfit/tihomolov/task3b/network/storage/MainRoles.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/src/main/java/ru/nsu/ccfit/tihomolov/task3b/network/storage/MainRoles.java b/src/main/java/ru/nsu/ccfit/tihomolov/task3b/network/storage/MainRoles.java
+new file mode 100644
+--- /dev/null	(date 1696766626321)
++++ b/src/main/java/ru/nsu/ccfit/tihomolov/task3b/network/storage/MainRoles.java	(date 1696766626321)
+@@ -0,0 +1,15 @@
++package ru.nsu.ccfit.tihomolov.task3b.network.storage;
++
++import lombok.AllArgsConstructor;
++import lombok.Data;
++import lombok.NoArgsConstructor;
++import ru.nsu.ccfit.tihomolov.task3b.snakes.proto.SnakesProto;
++
++@Data
++public class MainRoles {
++    private HostNetworkInfo master;
++
++    private HostNetworkInfo deputy;
++
++    private SnakesProto.NodeRole self;
++}
+Index: src/main/java/ru/nsu/ccfit/tihomolov/task3b/network/storage/SentMessage.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/src/main/java/ru/nsu/ccfit/tihomolov/task3b/network/storage/SentMessage.java b/src/main/java/ru/nsu/ccfit/tihomolov/task3b/network/storage/SentMessage.java
+new file mode 100644
+--- /dev/null	(date 1696762997995)
++++ b/src/main/java/ru/nsu/ccfit/tihomolov/task3b/network/storage/SentMessage.java	(date 1696762997995)
+@@ -0,0 +1,4 @@
++package ru.nsu.ccfit.tihomolov.task3b.network.storage;
++
++public record SentMessage(long time, Message message) {
++}
+Index: src/main/java/ru/nsu/ccfit/tihomolov/task3b/network/storage/NetworkStorage.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/src/main/java/ru/nsu/ccfit/tihomolov/task3b/network/storage/NetworkStorage.java b/src/main/java/ru/nsu/ccfit/tihomolov/task3b/network/storage/NetworkStorage.java
+new file mode 100644
+--- /dev/null	(date 1696774201251)
++++ b/src/main/java/ru/nsu/ccfit/tihomolov/task3b/network/storage/NetworkStorage.java	(date 1696774201251)
+@@ -0,0 +1,37 @@
++package ru.nsu.ccfit.tihomolov.task3b.network.storage;
++
++import lombok.Getter;
++import lombok.Setter;
++import lombok.extern.slf4j.Slf4j;
++import ru.nsu.ccfit.tihomolov.task3b.game.model.MainNodeInfo;
++
++import java.util.*;
++import java.util.concurrent.ConcurrentHashMap;
++
++@Slf4j
++public class NetworkStorage {
++    @Setter
++    @Getter
++    private Long lastSendTime;
++    @Getter
++    private final Map<String, MainNodeInfo> mainNodesInfoMap = new ConcurrentHashMap<>();
++    @Getter
++    private final HashMap<HostNetworkInfo, NodeInfo> players = new HashMap<>();
++    private final HashMap<Long, Message> messagesToSend = new HashMap<>();
++    @Getter
++    private final MainRoles mainRoles = new MainRoles();
++
++    public void addToMessageToSend(Message message) {
++        log.info("Add message to send " + message.getType());
++        messagesToSend.put(message.getMsgSeq(), message);
++    }
++
++    public Collection<Message> getMessagesForSend() {
++        return messagesToSend.values();
++    }
++
++    public void removeFromMessageToSend(Long msgSeq) {
++        log.info("Remove message to send " + msgSeq);
++        messagesToSend.remove(msgSeq);
++    }
++}
+Index: src/main/java/ru/nsu/ccfit/tihomolov/task3b/network/storage/HostNetworkInfo.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/src/main/java/ru/nsu/ccfit/tihomolov/task3b/network/storage/HostNetworkInfo.java b/src/main/java/ru/nsu/ccfit/tihomolov/task3b/network/storage/HostNetworkInfo.java
+new file mode 100644
+--- /dev/null	(date 1696762997925)
++++ b/src/main/java/ru/nsu/ccfit/tihomolov/task3b/network/storage/HostNetworkInfo.java	(date 1696762997925)
+@@ -0,0 +1,13 @@
++package ru.nsu.ccfit.tihomolov.task3b.network.storage;
++
++import lombok.AllArgsConstructor;
++import lombok.Data;
++
++import java.net.InetAddress;
++
++@AllArgsConstructor
++@Data
++public class HostNetworkInfo {
++    private InetAddress ip;
++    private int port;
++}
+Index: src/main/java/ru/nsu/ccfit/tihomolov/task3b/network/storage/SentMessageScheduler.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/src/main/java/ru/nsu/ccfit/tihomolov/task3b/network/storage/SentMessageScheduler.java b/src/main/java/ru/nsu/ccfit/tihomolov/task3b/network/storage/SentMessageScheduler.java
+new file mode 100644
+--- /dev/null	(date 1696774201259)
++++ b/src/main/java/ru/nsu/ccfit/tihomolov/task3b/network/storage/SentMessageScheduler.java	(date 1696774201259)
+@@ -0,0 +1,53 @@
++package ru.nsu.ccfit.tihomolov.task3b.network.storage;
++
++import lombok.Setter;
++import lombok.extern.slf4j.Slf4j;
++import ru.nsu.ccfit.tihomolov.task3b.snakes.proto.SnakesProto;
++
++import java.util.Iterator;
++
++import static java.lang.Thread.sleep;
++import static ru.nsu.ccfit.tihomolov.task3b.context.Context.PERIOD;
++
++@Slf4j
++public class SentMessageScheduler implements Runnable {
++    @Setter
++    private Integer delay;
++    private static final int GAME_DELAY_TO_ACK_MESSAGE_DELAY = 10;
++    private NetworkStorage networkStorage;
++
++    public SentMessageScheduler(NetworkStorage networkStorage, Integer delay) {
++        this.networkStorage = networkStorage;
++        this.delay = delay / GAME_DELAY_TO_ACK_MESSAGE_DELAY;
++        System.out.println("Create");
++    }
++
++    @Override
++    public void run() {
++        if (delay == null) {
++            log.error("Delay do not set");
++            return;
++        }
++        while (!Thread.currentThread().isInterrupted()) {
++            Iterator<Message> iterator = networkStorage.getMessagesForSend().iterator();
++            while (iterator.hasNext()) {
++                Message message = iterator.next();
++                if (message.getSendTime() == null) continue;
++                if (message.getType() == SnakesProto.GameMessage.TypeCase.ACK ||
++                        message.getType() == SnakesProto.GameMessage.TypeCase.ANNOUNCEMENT ||
++                        message.getType() == SnakesProto.GameMessage.TypeCase.DISCOVER) {
++                    iterator.remove();
++                } else if (System.currentTimeMillis() - message.getSendTime() > delay) {
++                    log.info("Receive again");
++                    networkStorage.addToMessageToSend(message);
++                    iterator.remove();
++                }
++            }
++            try {
++                sleep(1);
++            } catch (InterruptedException e) {
++                throw new RuntimeException(e);
++            }
++        }
++    }
++}
+Index: src/main/java/ru/nsu/ccfit/tihomolov/task3b/network/multicast/MulticastService.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/src/main/java/ru/nsu/ccfit/tihomolov/task3b/network/multicast/MulticastService.java b/src/main/java/ru/nsu/ccfit/tihomolov/task3b/network/multicast/MulticastService.java
+--- a/src/main/java/ru/nsu/ccfit/tihomolov/task3b/network/multicast/MulticastService.java	
++++ b/src/main/java/ru/nsu/ccfit/tihomolov/task3b/network/multicast/MulticastService.java	(date 1696762997984)
+@@ -3,7 +3,6 @@
+ import lombok.extern.slf4j.Slf4j;
+ import ru.nsu.ccfit.tihomolov.task3b.game.controller.GameController;
+ import ru.nsu.ccfit.tihomolov.task3b.game.model.MainNodeInfo;
+-import ru.nsu.ccfit.tihomolov.task3b.network.HostNetworkInfo;
+ import ru.nsu.ccfit.tihomolov.task3b.snakes.proto.SnakesProto;
+ 
+ import java.io.IOException;
+Index: src/main/java/ru/nsu/ccfit/tihomolov/task3b/network/multicast/MulticastReceiver.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/src/main/java/ru/nsu/ccfit/tihomolov/task3b/network/multicast/MulticastReceiver.java b/src/main/java/ru/nsu/ccfit/tihomolov/task3b/network/multicast/MulticastReceiver.java
+--- a/src/main/java/ru/nsu/ccfit/tihomolov/task3b/network/multicast/MulticastReceiver.java	
++++ b/src/main/java/ru/nsu/ccfit/tihomolov/task3b/network/multicast/MulticastReceiver.java	(date 1696762997919)
+@@ -2,14 +2,13 @@
+ 
+ import com.google.protobuf.InvalidProtocolBufferException;
+ import lombok.extern.slf4j.Slf4j;
+-import ru.nsu.ccfit.tihomolov.task3b.network.HostNetworkInfo;
++import ru.nsu.ccfit.tihomolov.task3b.network.storage.HostNetworkInfo;
+ import ru.nsu.ccfit.tihomolov.task3b.game.model.MainNodeInfo;
+ import ru.nsu.ccfit.tihomolov.task3b.snakes.proto.SnakesProto;
+ 
+ import java.io.IOException;
+ import java.net.DatagramPacket;
+ import java.util.Arrays;
+-import java.util.HashMap;
+ import java.util.List;
+ import java.util.Map;
+ 
+Index: src/main/java/ru/nsu/ccfit/tihomolov/task3b/network/NetworkController.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/src/main/java/ru/nsu/ccfit/tihomolov/task3b/network/NetworkController.java b/src/main/java/ru/nsu/ccfit/tihomolov/task3b/network/NetworkController.java
+--- a/src/main/java/ru/nsu/ccfit/tihomolov/task3b/network/NetworkController.java	
++++ b/src/main/java/ru/nsu/ccfit/tihomolov/task3b/network/NetworkController.java	(date 1696773475632)
+@@ -4,6 +4,10 @@
+ import ru.nsu.ccfit.tihomolov.task3b.game.controller.GameController;
+ import ru.nsu.ccfit.tihomolov.task3b.game.model.GameMessageCreator;
+ import ru.nsu.ccfit.tihomolov.task3b.network.multicast.MulticastService;
++import ru.nsu.ccfit.tihomolov.task3b.network.storage.HostNetworkInfo;
++import ru.nsu.ccfit.tihomolov.task3b.network.storage.Message;
++import ru.nsu.ccfit.tihomolov.task3b.network.storage.NetworkStorage;
++import ru.nsu.ccfit.tihomolov.task3b.network.storage.SentMessageScheduler;
+ import ru.nsu.ccfit.tihomolov.task3b.network.udp.ServiceUDP;
+ import ru.nsu.ccfit.tihomolov.task3b.snakes.proto.SnakesProto;
+ 
+@@ -44,8 +48,7 @@
+ 
+     private void addMessage(HostNetworkInfo hostNetworkInfo, SnakesProto.GameMessage gameMessage) {
+         System.out.println("Private addMessage " + gameMessage.getTypeCase());
+-        networkStorage.addToMessageToSend(new Message(gameMessage.getMsgSeq(), new DatagramPacket(gameMessage.toByteArray(), gameMessage.getSerializedSize(),
+-                hostNetworkInfo.getIp(), hostNetworkInfo.getPort()), gameMessage.getTypeCase()));
++        networkStorage.addToMessageToSend(new Message(gameMessage, hostNetworkInfo));
+     }
+ 
+     public void sendAnnouncementMsg(SnakesProto.GameMessage.AnnouncementMsg startAnnouncementMsg) {
+@@ -64,11 +67,9 @@
+     public void addGameStateMessage(SnakesProto.GameState gameState) {
+         //networkStorage.getPlayers().forEach(System.out::println);
+         log.info(networkStorage.getPlayers().toString());
+-        networkStorage.getPlayers().forEach(player -> {
++        networkStorage.getPlayers().keySet().forEach(player -> {
+                     SnakesProto.GameMessage gameMessage = GameMessageCreator.initGameMessage(gameState);
+-                    networkStorage.addToMessageToSend(new Message(gameMessage.getMsgSeq(),
+-                            new DatagramPacket(gameMessage.toByteArray(), gameMessage.getSerializedSize(),
+-                                    player.getIp(), player.getPort()), gameMessage.getTypeCase()));
++                    networkStorage.addToMessageToSend(new Message(gameMessage, player.getIp(), player.getPort()));
+                 }
+         );
+     }
+@@ -78,8 +79,20 @@
+     }
+ 
+     public void addMessage(String gameName, SnakesProto.GameMessage gameMessage) {
++        log.info(gameName);
++        log.info(networkStorage.getMainNodesInfoMap().toString());
+         HostNetworkInfo hostNetworkInfo = networkStorage.getMainNodesInfoMap().get(gameName).getHostNetworkInfo();
+-        networkStorage.addToMessageToSend(new Message(gameMessage.getMsgSeq(), new DatagramPacket(gameMessage.toByteArray(), gameMessage.getSerializedSize(),
+-                hostNetworkInfo.getIp(), hostNetworkInfo.getPort()), gameMessage.getTypeCase()));
++        networkStorage.addToMessageToSend(new Message(gameMessage, hostNetworkInfo));
++    }
++
++    public void setSelfRole(SnakesProto.NodeRole role) {
++        networkStorage.getMainRoles().setSelf(role);
++    }
++
++    public SnakesProto.NodeRole checkDeputy(SnakesProto.NodeRole role) {
++        if (role != SnakesProto.NodeRole.VIEWER && networkStorage.getMainRoles().getDeputy() == null) {
++            return SnakesProto.NodeRole.DEPUTY;
++        }
++        return role;
+     }
+ }
+Index: src/main/java/ru/nsu/ccfit/tihomolov/task3b/network/Message.java
+===================================================================
+diff --git a/src/main/java/ru/nsu/ccfit/tihomolov/task3b/network/Message.java b/src/main/java/ru/nsu/ccfit/tihomolov/task3b/network/Message.java
+deleted file mode 100644
+--- a/src/main/java/ru/nsu/ccfit/tihomolov/task3b/network/Message.java	
++++ /dev/null	
+@@ -1,30 +0,0 @@
+-package ru.nsu.ccfit.tihomolov.task3b.network;
+-
+-import lombok.AllArgsConstructor;
+-import lombok.Getter;
+-import lombok.Setter;
+-import ru.nsu.ccfit.tihomolov.task3b.snakes.proto.SnakesProto;
+-
+-import java.net.DatagramPacket;
+-import java.net.InetAddress;
+-
+-@Getter
+-public class Message {
+-    private final long msgSeq;
+-    private final DatagramPacket datagramPacket;
+-    private final SnakesProto.GameMessage.TypeCase type;
+-    @Setter
+-    private Long sendTime = null;
+-
+-    public Message(long msgSeq, DatagramPacket datagramPacket, SnakesProto.GameMessage.TypeCase type) {
+-        this.datagramPacket = datagramPacket;
+-        this.type = type;
+-        this.msgSeq = msgSeq;
+-    }
+-    public Message(long messageSeq, SnakesProto.GameMessage gameMessage, SnakesProto.GameMessage.TypeCase type,
+-                                      InetAddress ip, int port) {
+-        this.msgSeq = messageSeq;
+-        this.datagramPacket = new DatagramPacket(gameMessage.toByteArray(), gameMessage.getSerializedSize(), ip, port);
+-        this.type = type;
+-    }
+-}
+Index: src/main/java/ru/nsu/ccfit/tihomolov/task3b/network/SentMessageScheduler.java
+===================================================================
+diff --git a/src/main/java/ru/nsu/ccfit/tihomolov/task3b/network/SentMessageScheduler.java b/src/main/java/ru/nsu/ccfit/tihomolov/task3b/network/SentMessageScheduler.java
+deleted file mode 100644
+--- a/src/main/java/ru/nsu/ccfit/tihomolov/task3b/network/SentMessageScheduler.java	
++++ /dev/null	
+@@ -1,53 +0,0 @@
+-package ru.nsu.ccfit.tihomolov.task3b.network;
+-
+-import lombok.Setter;
+-import lombok.extern.slf4j.Slf4j;
+-import ru.nsu.ccfit.tihomolov.task3b.snakes.proto.SnakesProto;
+-
+-import java.util.Iterator;
+-import java.util.Map;
+-
+-import static java.lang.Thread.sleep;
+-import static ru.nsu.ccfit.tihomolov.task3b.context.Context.PERIOD;
+-
+-@Slf4j
+-public class SentMessageScheduler implements Runnable {
+-    @Setter
+-    private Integer delay;
+-    private static final int GAME_DELAY_TO_ACK_MESSAGE_DELAY = 10;
+-    private NetworkStorage networkStorage;
+-
+-    public SentMessageScheduler(NetworkStorage networkStorage, Integer delay) {
+-        this.networkStorage = networkStorage;
+-        this.delay = delay / GAME_DELAY_TO_ACK_MESSAGE_DELAY;
+-        System.out.println("Create");
+-    }
+-
+-    @Override
+-    public void run() {
+-        if (delay == null) {
+-            log.error("Delay do not set");
+-            return;
+-        }
+-        while (!Thread.currentThread().isInterrupted()) {
+-            Iterator<Message> iterator = networkStorage.getMessagesForSend().iterator();
+-            while (iterator.hasNext()) {
+-                Message message = iterator.next();
+-                if (message.getSendTime() == null) continue;
+-                if (message.getType() == SnakesProto.GameMessage.TypeCase.ACK ||
+-                        message.getType() == SnakesProto.GameMessage.TypeCase.ANNOUNCEMENT ||
+-                        message.getType() == SnakesProto.GameMessage.TypeCase.DISCOVER) {
+-                    iterator.remove();
+-                } else if (System.currentTimeMillis() - message.getSendTime() > delay) {
+-                    networkStorage.addToMessageToSend(message);
+-                    iterator.remove();
+-                }
+-            }
+-            try {
+-                sleep(PERIOD);
+-            } catch (InterruptedException e) {
+-                throw new RuntimeException(e);
+-            }
+-        }
+-    }
+-}
+Index: src/main/java/ru/nsu/ccfit/tihomolov/task3b/network/SentMessage.java
+===================================================================
+diff --git a/src/main/java/ru/nsu/ccfit/tihomolov/task3b/network/SentMessage.java b/src/main/java/ru/nsu/ccfit/tihomolov/task3b/network/SentMessage.java
+deleted file mode 100644
+--- a/src/main/java/ru/nsu/ccfit/tihomolov/task3b/network/SentMessage.java	
++++ /dev/null	
+@@ -1,8 +0,0 @@
+-package ru.nsu.ccfit.tihomolov.task3b.network;
+-
+-import ru.nsu.ccfit.tihomolov.task3b.snakes.proto.SnakesProto;
+-
+-import java.net.DatagramPacket;
+-
+-public record SentMessage(long time, Message message) {
+-}
+Index: src/main/java/ru/nsu/ccfit/tihomolov/task3b/network/NetworkStorage.java
+===================================================================
+diff --git a/src/main/java/ru/nsu/ccfit/tihomolov/task3b/network/NetworkStorage.java b/src/main/java/ru/nsu/ccfit/tihomolov/task3b/network/NetworkStorage.java
+deleted file mode 100644
+--- a/src/main/java/ru/nsu/ccfit/tihomolov/task3b/network/NetworkStorage.java	
++++ /dev/null	
+@@ -1,37 +0,0 @@
+-package ru.nsu.ccfit.tihomolov.task3b.network;
+-
+-import lombok.Data;
+-import lombok.Getter;
+-import lombok.extern.slf4j.Slf4j;
+-import ru.nsu.ccfit.tihomolov.task3b.game.model.MainNodeInfo;
+-
+-import java.net.DatagramPacket;
+-import java.util.*;
+-import java.util.concurrent.ConcurrentHashMap;
+-import java.util.concurrent.ConcurrentLinkedDeque;
+-import java.util.concurrent.ConcurrentLinkedQueue;
+-
+-@Slf4j
+-public class NetworkStorage {
+-    @Getter
+-    private final Map<String, MainNodeInfo> mainNodesInfoMap = new ConcurrentHashMap<>();
+-    //@Getter
+-    //private final Map<Long, SentMessage> sentMessage = new ConcurrentHashMap<>();
+-    @Getter
+-    private final HashSet<HostNetworkInfo> players = new HashSet<>();
+-    private final ConcurrentHashMap<Long, Message> messagesToSend = new ConcurrentHashMap<>();
+-
+-    public void addToMessageToSend(Message message) {
+-        log.info("Add message to send " + message.getType());
+-        messagesToSend.put(message.getMsgSeq(), message);
+-    }
+-
+-    public Collection<Message> getMessagesForSend() {
+-        return messagesToSend.values();
+-    }
+-
+-    public void removeFromMessageToSend(Long msgSeq) {
+-        System.out.println("Remove message to send " + msgSeq);
+-        messagesToSend.remove(msgSeq);
+-    }
+-}
+Index: src/main/java/ru/nsu/ccfit/tihomolov/task3b/network/HostNetworkInfo.java
+===================================================================
+diff --git a/src/main/java/ru/nsu/ccfit/tihomolov/task3b/network/HostNetworkInfo.java b/src/main/java/ru/nsu/ccfit/tihomolov/task3b/network/HostNetworkInfo.java
+deleted file mode 100644
+--- a/src/main/java/ru/nsu/ccfit/tihomolov/task3b/network/HostNetworkInfo.java	
++++ /dev/null	
+@@ -1,13 +0,0 @@
+-package ru.nsu.ccfit.tihomolov.task3b.network;
+-
+-import lombok.AllArgsConstructor;
+-import lombok.Data;
+-
+-import java.net.InetAddress;
+-
+-@AllArgsConstructor
+-@Data
+-public class HostNetworkInfo {
+-    private InetAddress ip;
+-    private int port;
+-}
+Index: src/main/java/module-info.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/src/main/java/module-info.java b/src/main/java/module-info.java
+--- a/src/main/java/module-info.java	
++++ b/src/main/java/module-info.java	(date 1696762997973)
+@@ -14,4 +14,6 @@
+     exports ru.nsu.ccfit.tihomolov.task3b.game.controller;
+     exports ru.nsu.ccfit.tihomolov.task3b.network;
+     opens ru.nsu.ccfit.tihomolov.task3b.network to javafx.fxml;
++    exports ru.nsu.ccfit.tihomolov.task3b.network.storage;
++    opens ru.nsu.ccfit.tihomolov.task3b.network.storage to javafx.fxml;
+ }
+\ No newline at end of file

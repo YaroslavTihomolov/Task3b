@@ -1,0 +1,42 @@
+.list-view {
+    -fx-background-color: transparent;
+    -fx-text-fill: #336699;
+    -fx-font-size: 14px;
+}
+
+.list-view .list-cell {
+    -fx-background-color: transparent;
+    -fx-font-family: "Roboto";
+    -fx-font-size: 14px;
+    -fx-font-weight: normal;
+    -fx-text-fill: #FFFFFF;
+}
+
+.list-view .list-cell:selected {
+    -fx-background-color: #336699;
+    -fx-text-fill: #FFFFFF;
+}
+
+.scroll-bar {
+    -fx-background-color: transparent; /* Сделать фон ползунка прозрачным */
+}
+
+.scroll-bar .track {
+    -fx-background-color: transparent; /* Сделать фон трека прозрачным */
+}
+
+.scroll-bar .thumb {
+    -fx-background-color: transparent; /* Сделать фон ползунка прозрачным */
+}
+
+.scroll-bar:increment-button {
+    -fx-padding: 0; /* убрать отступы */
+    -fx-background-color: transparent; /* сделать фон стрелок прозрачным */
+    -fx-shape: ""; /* убрать форму стрелок */
+}
+
+.scroll-bar:decrement-arrow {
+    -fx-background-color: transparent; /* сделать фон стрелок прозрачным */
+    -fx-padding: 0; /* убрать отступы */
+    -fx-shape: ""; /* убрать форму стрелок */
+}

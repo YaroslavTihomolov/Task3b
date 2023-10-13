@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.Group?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ListView?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.image.Image?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.Pane?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.shape.Circle?>
+<?import javafx.scene.shape.Line?>
+
+<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="507.0" prefWidth="746.0" style="-fx-background-color: #2A363F;" xmlns="http://javafx.com/javafx/19" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ru.nsu.ccfit.tihomolov.task3b.game.controller.MenuController">
+    <Pane layoutX="36.0" layoutY="205.0" prefHeight="83.0" prefWidth="45.0">
+        <Group layoutX="17.0" layoutY="27.0">
+            <Circle fill="#6dd89f" layoutY="3.158203125" radius="5.0" stroke="BLACK" strokeType="INSIDE" />
+            <Circle fill="#5fb68c" layoutX="19.0" layoutY="3.158203125" radius="5.0" stroke="BLACK" strokeType="INSIDE" />
+            <Circle fill="#457666" layoutY="21.158203125" radius="5.0" stroke="BLACK" strokeType="INSIDE" />
+            <Circle fill="#539778" layoutX="19.0" layoutY="21.158203125" radius="5.0" stroke="BLACK" strokeType="INSIDE" />
+        </Group>
+    </Pane>
+    <Line endX="100.0" layoutX="385.0" layoutY="254.0" rotate="90.0" startX="-150.0" stroke="#465058" strokeWidth="2.0" />
+    <TextField fx:id="width" layoutX="400.0" layoutY="215.0" prefHeight="41.0" prefWidth="248.0" promptText="Ширина поля в клетках (от 10 до 100)" style="-fx-background-color: #2A363F; -fx-border-color: #465058; -fx-text-fill: #FFFFFF;" text="20" />
+    <TextField fx:id="height" layoutX="400.0" layoutY="275.0" prefHeight="41.0" prefWidth="248.0" promptText="Высота поля в клетках (от 10 до 100)" style="-fx-background-color: #2A363F; -fx-border-color: #465058; -fx-text-fill: #FFFFFF;" text="20" />
+    <TextField fx:id="delay" layoutX="400.0" layoutY="395.0" prefHeight="41.0" prefWidth="248.0" promptText="Задержка между ходами (от 100 до 3000)" style="-fx-background-color: #2A363F; -fx-border-color: #465058; -fx-text-fill: #FFFFFF;" text="200" />
+    <TextField fx:id="foodCount" layoutX="400.0" layoutY="335.0" prefHeight="41.0" prefWidth="248.0" promptText="Количество клеток с едой (от 0 до 100)" style="-fx-background-color: #2A363F; -fx-border-color: #465058; -fx-text-fill: #FFFFFF;" text="1" />
+    <Button layoutX="426.0" layoutY="445.0" mnemonicParsing="false" onAction="#buttonHandler" prefHeight="28.0" prefWidth="180.0" style="-fx-background-color: #27ae60; -fx-text-fill: #ffffff;" text="Создать игру" />
+    <ImageView fitHeight="129.0" fitWidth="248.0" layoutX="220.0" pickOnBounds="true" preserveRatio="true">
+        <Image url="@../images/snake_logo.png" />
+    </ImageView>    
+    <TextField fx:id="gameName" layoutX="400.0" layoutY="95.0" prefHeight="41.0" prefWidth="248.0" promptText="Название игры" style="-fx-background-color: #2A363F; -fx-border-color: #465058; -fx-text-fill: #FFFFFF;" text="Snake" />
+    <VBox layoutX="106.0" layoutY="95.0" prefHeight="371.0" prefWidth="238.0" style="-fx-background-color: #242A31; -fx-background-insets: 0;">
+        <ListView fx:id="games" onMouseClicked="#joinToGame" prefHeight="473.0" prefWidth="230.0" style="-fx-border-color: #27ae60; -fx-border-width: 2; -fx-border-radius: 5;" stylesheets="@../css_styles/gameList.css" />
+    </VBox>
+   <TextField fx:id="name" layoutX="400.0" layoutY="155.0" prefHeight="41.0" prefWidth="248.0" promptText="Имя" style="-fx-background-color: #2A363F; -fx-border-color: #465058; -fx-text-fill: #FFFFFF;" />
+</AnchorPane>
