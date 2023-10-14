@@ -148,7 +148,8 @@ public class Game implements Observable, Runnable {
                notifyGameState();
                Thread.sleep(gameConfig.getStateDelayMs());
            } catch (InterruptedException e) {
-               throw new RuntimeException(e);
+               log.error(e.getMessage());
+               Thread.currentThread().interrupt();
            }
        }
     }
@@ -252,7 +253,7 @@ public class Game implements Observable, Runnable {
     public void handleAfkPlayer(HostNetworkInfo hostNetworkInfo) {
         Integer afkPlayerId = playersId.get(hostNetworkInfo);
         SnakesProto.GamePlayer afkPlayer = players.get(afkPlayerId);
-        if (afkPlayer.getRole() != SnakesProto.NodeRole.VIEWER) {
+        if (afkPlayer != null && afkPlayer.getRole() != SnakesProto.NodeRole.VIEWER) {
             players.put(afkPlayerId, Player.updateRole(afkPlayer, SnakesProto.NodeRole.VIEWER));
             Snake afkPlayerSnake = snakes.get(afkPlayerId);
             afkPlayerSnake.updateStatus(SnakesProto.GameState.Snake.SnakeState.ZOMBIE);

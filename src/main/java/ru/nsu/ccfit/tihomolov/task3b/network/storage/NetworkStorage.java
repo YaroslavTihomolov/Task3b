@@ -57,4 +57,9 @@ public class NetworkStorage {
     public ConcurrentHashMap<HostNetworkInfo, NodeInfo> getPlayersMap() {
         return players;
     }
+
+    public void clear() {
+        players.clear();
+        messagesToSend.clear();
+    }
 }

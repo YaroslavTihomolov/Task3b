@@ -34,7 +34,8 @@ public class SenderUDP implements Runnable {
                 try {
                     datagramSocket.wait();
                 } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
+                    log.error(e.getMessage());
+                    Thread.currentThread().interrupt();
                 }
             }
         }

@@ -49,7 +49,8 @@ public class SentMessageScheduler implements Runnable {
             try {
                 sleep(1);
             } catch (InterruptedException e) {
-                throw new RuntimeException(e);
+                log.error(e.getMessage());
+                Thread.currentThread().interrupt();
             }
         }
     }

@@ -16,9 +16,8 @@ public class Main extends Application {
     public void start(Stage stage) throws IOException {
         View view = new View(stage);
         GameController controller = new GameController(view);
-        controller.addObserver(view.getMenuController());
-        view.getMenuController().setGameController(controller);
-        view.start();
+        view.setGameController(controller);
+        view.openMenu();
         NetworkController networkController = new NetworkController(args[0], Integer.parseInt(args[1]), controller);
     }
 

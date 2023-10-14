@@ -12,6 +12,8 @@ public class ServiceUDP {
     private final static int TIMEOUT_SOCKET = 5;
     private final SenderUDP senderUDP;
     private final ReceiverUDP receiverUDP;
+    private Thread senderThread;
+    private Thread recieverThread;
 
     public ServiceUDP(NetworkStorage networkStorage, GameController gameController) throws SocketException {
         DatagramSocket datagramSocket = new DatagramSocket();
@@ -21,11 +23,16 @@ public class ServiceUDP {
     }
 
     public void start() {
-        Thread threadSender = new Thread(senderUDP);
-        threadSender.start();
+        senderThread = new Thread(senderUDP);
+        senderThread.start();
 
-        Thread threadReceiver = new Thread(receiverUDP);
-        threadReceiver.start();
+        recieverThread = new Thread(receiverUDP);
+        recieverThread.start();
+    }
+
+    public void stop() {
+        senderThread.interrupt();
+        recieverThread.interrupt();
     }
 }
 

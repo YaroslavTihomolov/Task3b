@@ -11,6 +11,7 @@ import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 import lombok.Getter;
+import lombok.Setter;
 import ru.nsu.ccfit.tihomolov.task3b.game.controller.GameWindowController;
 import ru.nsu.ccfit.tihomolov.task3b.game.controller.JoinController;
 import ru.nsu.ccfit.tihomolov.task3b.game.controller.MenuController;
@@ -29,6 +30,7 @@ public class View {
     private static final String PATH_TO_GAME_MENU = "src/main/resources/fxml/menu.fxml";
     private static final String PATH_TO_GAME_WINDOW = "src/main/resources/fxml/gameWindow.fxml";
     private static final String PATH_TO_JOIN_MENU = "src/main/resources/fxml/join.fxml";
+    @Setter
     private GameController gameController;
     private static final Color DARK_GREEN = Color.web("AAD751");
     private static final Color GREEN = Color.web("A2D149");
@@ -42,24 +44,28 @@ public class View {
     private static final Image apple = new Image(PATH_TO_APPLE_IMAGE);
     private final Stage stage;
     private Stage secondStage;
-    private final Pane root;
+    private Pane rootGameWindow;
+    private Pane rootJoinWindow;
+    private Pane rootMenuWindow;
     @Getter
-    private final MenuController menuController;
+    private MenuController menuController;
     private GameWindowController gameWindowController;
     private final Canvas fieldCanvas = new Canvas(CANVAS_WIDTH, CANVAS_HEIGHT);
 
-    public View(Stage stage) throws IOException {
+    public View(Stage stage) {
         stage.setResizable(false);
         this.stage = stage;
+    }
+
+    public void openMenu() throws IOException {
         FXMLLoader fxmlLoader = new FXMLLoader();
         File file = new File(PATH_TO_GAME_MENU);
         fxmlLoader.setLocation(file.toURI().toURL());
-        root = fxmlLoader.load();
+        rootMenuWindow = fxmlLoader.load();
         menuController = fxmlLoader.getController();
-    }
-
-    public void start() {
-        Scene scene = new Scene(root);
+        gameController.addObserver(menuController);
+        menuController.setGameController(gameController);
+        Scene scene = new Scene(rootMenuWindow);
         stage.setScene(scene);
         stage.show();
     }
@@ -67,17 +73,16 @@ public class View {
     public JoinController createJoinWindow() {
         secondStage = new Stage();
         secondStage.setTitle("Join");
-        Pane secondRoot;
         FXMLLoader fxmlLoader = new FXMLLoader();
         File file = new File(PATH_TO_JOIN_MENU);
         try {
             fxmlLoader.setLocation(file.toURI().toURL());
-            secondRoot = fxmlLoader.load();
+            rootJoinWindow = fxmlLoader.load();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
 
-        Scene scene = new Scene(secondRoot);
+        Scene scene = new Scene(rootJoinWindow);
         secondStage.setResizable(false);
         secondStage.setScene(scene);
         secondStage.show();
@@ -92,7 +97,6 @@ public class View {
         FXMLLoader fxmlLoader = new FXMLLoader();
         File file = new File(PATH_TO_GAME_WINDOW);
 
-        this.gameController = gameController;
         this.height = gameConfig.getHeight();
         this.width = gameConfig.getWidth();
         this.rectangleWidth = CANVAS_WIDTH / width;
@@ -102,22 +106,22 @@ public class View {
         stage.setResizable(false);
         stage.setTitle("Snake");
 
-        Pane root;
 
         try {
             fxmlLoader.setLocation(file.toURI().toURL());
-            root = fxmlLoader.load();
+            rootGameWindow = fxmlLoader.load();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
         gameWindowController = fxmlLoader.getController();
+        gameWindowController.setGameController(gameController);
 
         gameController.addObserver(gameWindowController);
 
         gameWindowController.setCanvas(fieldCanvas);
 
-        root.getChildren().add(fieldCanvas);
-        Scene scene = getScene(gameController, root, fieldCanvas);
+        rootGameWindow.getChildren().add(fieldCanvas);
+        Scene scene = getScene(gameController, rootGameWindow, fieldCanvas);
 
         stage.setScene(scene);
         stage.show();

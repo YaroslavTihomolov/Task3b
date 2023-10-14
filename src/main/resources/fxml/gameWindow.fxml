@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import javafx.scene.control.Button?>
 <?import javafx.scene.control.ListView?>
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.VBox?>
@@ -11,4 +12,5 @@
    <VBox layoutX="685.0" layoutY="14.0" prefHeight="170.0" prefWidth="238.0" style="-fx-background-color: #242A31; -fx-background-insets: 0;">
       <ListView fx:id="score" prefHeight="473.0" prefWidth="230.0" style="-fx-border-color: #27ae60; -fx-border-width: 2; -fx-border-radius: 5;" stylesheets="@../css_styles/gameList.css" />
    </VBox>
+   <Button layoutX="685.0" layoutY="573.0" mnemonicParsing="false" onAction="#goToMainMenu" prefHeight="26.0" prefWidth="237.0" style="-fx-background-color: #27ae60; -fx-text-fill: #ffffff;" text="Выйти в главное меню" textAlignment="CENTER" textOverrun="CLIP" />
 </AnchorPane>

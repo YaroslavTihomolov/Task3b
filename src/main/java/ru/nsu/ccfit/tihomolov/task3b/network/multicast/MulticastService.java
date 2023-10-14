@@ -36,9 +36,8 @@ public class MulticastService {
             @Override
             public void run() {
                 while (true) {
-                    if (multicastReceiver.receive()) {
-                        gameController.notifyGameListObservers(multicastReceiver.getAnnouncementMessages());
-                    }
+                    multicastReceiver.receive();
+                    gameController.notifyGameListObservers(multicastReceiver.getAnnouncementMessages());
                 }
             }
         };

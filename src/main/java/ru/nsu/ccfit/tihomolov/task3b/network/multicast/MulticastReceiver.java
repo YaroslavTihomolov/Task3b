@@ -32,7 +32,7 @@ public class MulticastReceiver implements AutoCloseable {
      * and add to hash map new users
      * If user do not send messages 30 seconds user delete from map
      */
-    public boolean receive() {
+    public void receive() {
         SnakesProto.GameMessage.AnnouncementMsg announcementMsg;
         MainNodeInfo oldMessage = null;
         //log.info("Start receive");
@@ -40,7 +40,7 @@ public class MulticastReceiver implements AutoCloseable {
             DatagramPacket packet = multicastUDP.receive();
             SnakesProto.GameMessage gameMessage = SnakesProto.GameMessage.parseFrom(Arrays.copyOfRange(packet.getData(), 0, packet.getLength()));
             announcementMsg = gameMessage.getAnnouncement();
-            //log.info("get game: " + announcementMsg.getGames(0).getGameName());
+            log.info("get game: " + announcementMsg.getGames(0).getGameName());
             oldMessage = games.put(announcementMsg.getGames(0).getGameName(), new MainNodeInfo(announcementMsg, System.currentTimeMillis(),
                     new HostNetworkInfo(packet.getAddress(), packet.getPort())));
             if (oldMessage == null) {
@@ -49,7 +49,6 @@ public class MulticastReceiver implements AutoCloseable {
         } catch (InvalidProtocolBufferException e) {
             log.error(e.getMessage());
         }
-        return oldMessage == null;
     }
 
     private boolean removeSocketStatus(Long lastActionTime) {

@@ -9,8 +9,9 @@ import ru.nsu.ccfit.tihomolov.task3b.game.ui.View;
 import ru.nsu.ccfit.tihomolov.task3b.game.model.Game;
 import ru.nsu.ccfit.tihomolov.task3b.network.NetworkController;
 import ru.nsu.ccfit.tihomolov.task3b.network.storage.HostNetworkInfo;
-import ru.nsu.ccfit.tihomolov.task3b.network.storage.NodeInfo;
 import ru.nsu.ccfit.tihomolov.task3b.snakes.proto.SnakesProto;
+
+import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.LinkedList;
@@ -22,14 +23,13 @@ public class GameController implements Observer, GameListObservable {
     @Setter
     private NetworkController networkController;
     private Game game;
-    private String playerName;
+    private Thread gameThread;
     private SnakesProto.GameState lastGameState;
     private JoinController joinController;
     private final View view;
     private SnakesProto.NodeRole role;
     private SnakesProto.GameAnnouncement curGameInfo;
     private int curGameStateOrder = Integer.MIN_VALUE;
-    private int selfPlayerId;
 
     public GameController(View view) {
         this.view = view;
@@ -45,10 +45,10 @@ public class GameController implements Observer, GameListObservable {
         this.joinController.printErrorText();
     }
 
-    private void gameMasterRoutine(SnakesProto.GameConfig gameConfig) {
+    private void gameMasterRoutine() {
         this.game.addObserver(this);
-        Thread thread = new Thread(game);
-        thread.start();
+        gameThread = new Thread(game);
+        gameThread.start();
         this.role = SnakesProto.NodeRole.MASTER;
         networkController.setSelfRole(role);
         startAnnouncementMsg(game.getAnnouncementMsg());
@@ -60,18 +60,19 @@ public class GameController implements Observer, GameListObservable {
     }
 
     public void creatGame(SnakesProto.GameConfig gameConfig, String playerName, String gameName) {
+        networkController.startUDPService();
         this.game = new Game(gameConfig, playerName, gameName);
         networkController.startMessageScheduler(gameConfig.getStateDelayMs());
         this.view.openGameWindow(gameConfig, this);
-        networkController.startPing(gameConfig.getStateDelayMs());
-        gameMasterRoutine(gameConfig);
+        networkController.startSchedulePlayers(gameConfig.getStateDelayMs());
+        gameMasterRoutine();
     }
 
     public void continueGame(HostNetworkInfo lastMasterNetworkInfo, HostNetworkInfo selfHostNetworkInfo) {
         this.game = new Game(lastGameState, curGameInfo.getConfig(), lastMasterNetworkInfo, selfHostNetworkInfo, curGameInfo.getGameName());
         StateOrder.setStateOrder(lastGameState.getStateOrder() + 1);
         log.info("Create copy of game");
-        gameMasterRoutine(curGameInfo.getConfig());
+        gameMasterRoutine();
     }
 
     public void updatePlayersList() {
@@ -135,7 +136,6 @@ public class GameController implements Observer, GameListObservable {
 
 
     public void openJoinGame(HostNetworkInfo hostNetworkInfo, int selfPlayerId) {
-        this.selfPlayerId = selfPlayerId;
         Platform.runLater(() -> {
             view.closeJoinStage();
             view.openGameWindow(curGameInfo.getConfig(), this);
@@ -153,11 +153,11 @@ public class GameController implements Observer, GameListObservable {
 
     public void addJoinMessage(SnakesProto.GameAnnouncement gameInfo, SnakesProto.GameMessage.JoinMsg joinMsg) {
         this.curGameInfo = gameInfo;
-        this.playerName = joinMsg.getPlayerName();
         log.info("Send joinMsg to " + gameInfo.getGameName());
+        networkController.startUDPService();
         networkController.setSelfRole(joinMsg.getRequestedRole());
         networkController.setMasterInfo(gameInfo.getGameName());
-        networkController.startPing(curGameInfo.getConfig().getStateDelayMs());
+        networkController.startSchedulePlayers(curGameInfo.getConfig().getStateDelayMs());
         networkController.addMessage(gameInfo.getGameName(), GameMessageCreator.initGameMessage(joinMsg));
     }
 
@@ -172,8 +172,26 @@ public class GameController implements Observer, GameListObservable {
 
     @Override
     public void notifyGameListObservers(final List<SnakesProto.GameMessage.AnnouncementMsg> gamesList) {
-        gameListObservers.forEach(observer -> {
-            observer.updateGamesList(gamesList);
-        });
+        gameListObservers.forEach(observer -> observer.updateGamesList(gamesList));
+    }
+
+    private void stopCurrentGame() {
+        SnakesProto.NodeRole selfRole = networkController.getNetworkStorage().getMainRoles().getSelf();
+        if (selfRole == SnakesProto.NodeRole.MASTER) {
+            gameThread.interrupt();
+            networkController.stopAnnouncementMsg();
+        }
+        networkController.stopSchedule();
+        networkController.stopUdpService();
+        networkController.clearNetworkStorage();
+    }
+
+    public void openMainMenu() {
+        try {
+            stopCurrentGame();
+            view.openMenu();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

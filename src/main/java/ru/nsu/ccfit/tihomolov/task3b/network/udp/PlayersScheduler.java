@@ -43,7 +43,6 @@ public class PlayersScheduler implements Runnable {
             playersToRemove.clear();
             if (networkStorage.getMainRoles().getSelf() != SnakesProto.NodeRole.MASTER &&
                     System.currentTimeMillis() - networkStorage.getLastSendTime() > delay) {
-                log.info("Self: " + networkStorage.getMainRoles().getSelf() + " Master: " + networkStorage.getMainRoles().getMaster());
                 SnakesProto.GameMessage gameMessage = GameMessageCreator.initGameMessage(SnakesProto.GameMessage.PingMsg.newBuilder().build());
                 networkStorage.addToMessageToSend(new Message(gameMessage, networkStorage.getMainRoles().getMaster()));
             }
@@ -62,7 +61,9 @@ public class PlayersScheduler implements Runnable {
             try {
                 Thread.sleep(1);
             } catch (InterruptedException e) {
-                throw new RuntimeException(e);
+                log.error(e.getMessage());
+                Thread.currentThread().interrupt();
+                //throw new RuntimeException(e);
             }
         }
     }

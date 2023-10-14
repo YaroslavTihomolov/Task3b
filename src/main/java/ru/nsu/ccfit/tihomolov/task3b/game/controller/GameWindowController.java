@@ -1,9 +1,11 @@
 package ru.nsu.ccfit.tihomolov.task3b.game.controller;
 
 import javafx.application.Platform;
+import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.control.ListView;
+import lombok.Setter;
 import ru.nsu.ccfit.tihomolov.task3b.snakes.proto.SnakesProto;
 
 import java.util.Comparator;
@@ -12,13 +14,12 @@ import java.util.List;
 
 
 public class GameWindowController implements GameListObserver {
-
+    @Setter
+    private GameController gameController;
     @FXML
     private Canvas gameWindow;
-
     @FXML
     private ListView<String> games;
-
     @FXML
     private ListView<String> score;
     private int index = 1;
@@ -48,5 +49,9 @@ public class GameWindowController implements GameListObserver {
                 }).toList();
         index = 1;
         Platform.runLater(() -> score.getItems().setAll(playersScore));
+    }
+
+    public void goToMainMenu() {
+        gameController.openMainMenu();
     }
 }

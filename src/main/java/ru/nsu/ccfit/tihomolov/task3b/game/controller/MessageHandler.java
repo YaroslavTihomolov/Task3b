@@ -48,12 +48,12 @@ public class MessageHandler implements Runnable {
 
     @Override
     public void run() {
-        //log.info("Start execute");
         try {
             HostNetworkInfo hostNetworkInfo = new HostNetworkInfo(packet.getAddress(), packet.getPort());
             NodeInfo senderInfo = networkStorage.getPlayerByKey(hostNetworkInfo);
             if (senderInfo != null) senderInfo.updateTime();
             SnakesProto.GameMessage gameMessage = SnakesProto.GameMessage.parseFrom(Arrays.copyOfRange(packet.getData(), 0, packet.getLength()));
+
             switch (gameMessage.getTypeCase()) {
                 case PING, ERROR -> sendAckMessage(gameMessage);
                 case ACK -> handleAck(gameMessage, hostNetworkInfo);
@@ -64,6 +64,7 @@ public class MessageHandler implements Runnable {
                 case DISCOVER -> {}
                 case TYPE_NOT_SET -> throw new RuntimeException("no such command");
             }
+
         } catch (InvalidProtocolBufferException e) {
             log.error(e.getMessage());
             throw new RuntimeException(e);
