@@ -12,6 +12,8 @@ import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 import lombok.Getter;
 import lombok.Setter;
+import ru.nsu.ccfit.tihomolov.task3b.exception.JavafxException;
+import ru.nsu.ccfit.tihomolov.task3b.exception.WrongNetInfoException;
 import ru.nsu.ccfit.tihomolov.task3b.game.controller.GameWindowController;
 import ru.nsu.ccfit.tihomolov.task3b.game.controller.JoinController;
 import ru.nsu.ccfit.tihomolov.task3b.game.controller.MenuController;
@@ -25,7 +27,7 @@ import java.util.List;
 
 
 public class View {
-    private volatile GraphicsContext gc;
+    private GraphicsContext gc;
     private static final String PATH_TO_APPLE_IMAGE = "images/ic_apple.png";
     private static final String PATH_TO_GAME_MENU = "src/main/resources/fxml/menu.fxml";
     private static final String PATH_TO_GAME_WINDOW = "src/main/resources/fxml/gameWindow.fxml";
@@ -35,18 +37,15 @@ public class View {
     private static final Color DARK_GREEN = Color.web("AAD751");
     private static final Color GREEN = Color.web("A2D149");
     private static final Color SNALE_COLOR = Color.web("4674E9");
-    private static final int CANVAS_WIDTH = 600;
-    private static final int CANVAS_HEIGHT = 600;
+    private static final double CANVAS_WIDTH = 600;
+    private static final double CANVAS_HEIGHT = 600;
     private int width;
     private int height;
-    private int rectangleWidth;
-    private int rectangleHeight;
+    private double rectangleWidth;
+    private double rectangleHeight;
     private static final Image apple = new Image(PATH_TO_APPLE_IMAGE);
     private final Stage stage;
     private Stage secondStage;
-    private Pane rootGameWindow;
-    private Pane rootJoinWindow;
-    private Pane rootMenuWindow;
     @Getter
     private MenuController menuController;
     private GameWindowController gameWindowController;
@@ -57,11 +56,16 @@ public class View {
         this.stage = stage;
     }
 
-    public void openMenu() throws IOException {
+    public void openMenu() {
         FXMLLoader fxmlLoader = new FXMLLoader();
         File file = new File(PATH_TO_GAME_MENU);
-        fxmlLoader.setLocation(file.toURI().toURL());
-        rootMenuWindow = fxmlLoader.load();
+        Pane rootMenuWindow;
+        try {
+            fxmlLoader.setLocation(file.toURI().toURL());
+            rootMenuWindow = fxmlLoader.load();
+        } catch (IOException e) {
+            throw new JavafxException(e.getMessage());
+        }
         menuController = fxmlLoader.getController();
         gameController.addObserver(menuController);
         menuController.setGameController(gameController);
@@ -75,11 +79,12 @@ public class View {
         secondStage.setTitle("Join");
         FXMLLoader fxmlLoader = new FXMLLoader();
         File file = new File(PATH_TO_JOIN_MENU);
+        Pane rootJoinWindow;
         try {
             fxmlLoader.setLocation(file.toURI().toURL());
             rootJoinWindow = fxmlLoader.load();
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new JavafxException(e.getMessage());
         }
 
         Scene scene = new Scene(rootJoinWindow);
@@ -107,11 +112,12 @@ public class View {
         stage.setTitle("Snake");
 
 
+        Pane rootGameWindow;
         try {
             fxmlLoader.setLocation(file.toURI().toURL());
             rootGameWindow = fxmlLoader.load();
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new JavafxException(e.getMessage());
         }
         gameWindowController = fxmlLoader.getController();
         gameWindowController.setGameController(gameController);
@@ -146,7 +152,7 @@ public class View {
                     gameController.addMove(InetAddress.getLocalHost(), 0, SnakesProto.Direction.DOWN);
                 }
             } catch (UnknownHostException e) {
-                throw new RuntimeException(e);
+                throw new WrongNetInfoException(e.getMessage());
             }
 
         }));

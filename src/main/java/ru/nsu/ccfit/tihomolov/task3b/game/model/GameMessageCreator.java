@@ -3,6 +3,10 @@ package ru.nsu.ccfit.tihomolov.task3b.game.model;
 import ru.nsu.ccfit.tihomolov.task3b.snakes.proto.SnakesProto;
 
 public class GameMessageCreator {
+    private GameMessageCreator() {
+        throw new IllegalStateException("Utility class");
+    }
+
     public static SnakesProto.GameMessage initGameMessage(SnakesProto.GameMessage.AnnouncementMsg announcementMsg) {
         return SnakesProto.GameMessage.newBuilder()
                 .setMsgSeq(MessageSequence.getMessageSequence())

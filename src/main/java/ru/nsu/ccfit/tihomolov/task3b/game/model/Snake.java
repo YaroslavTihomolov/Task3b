@@ -1,19 +1,14 @@
 package ru.nsu.ccfit.tihomolov.task3b.game.model;
 
 
-import javafx.scene.effect.Light;
 import lombok.Getter;
 import lombok.Setter;
+import ru.nsu.ccfit.tihomolov.task3b.exception.WrongDirectionException;
 import ru.nsu.ccfit.tihomolov.task3b.snakes.proto.SnakesProto;
-
 import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.Random;
-
 import static ru.nsu.ccfit.tihomolov.task3b.context.Context.*;
 import static ru.nsu.ccfit.tihomolov.task3b.snakes.proto.SnakesProto.GameState.Snake.SnakeState.ALIVE;
-import static ru.nsu.ccfit.tihomolov.task3b.snakes.proto.SnakesProto.GameState.Snake.SnakeState.ZOMBIE;
 
 
 @Getter
@@ -24,7 +19,7 @@ public class Snake {
     private SnakesProto.GameState.Snake snake;
     @Setter
     private SnakesProto.Direction move;
-    public final static int HEAD_INDEX = 0;
+    public static final int HEAD_INDEX = 0;
 
     public Snake(Field field, SnakesProto.GameState.Coord[] coords, int playerId) {
         this.field = field;
@@ -87,6 +82,7 @@ public class Snake {
             case SnakesProto.Direction.DOWN_VALUE -> y += 1;
             case SnakesProto.Direction.LEFT_VALUE -> x -= 1;
             case SnakesProto.Direction.RIGHT_VALUE -> x += 1;
+            default -> throw new WrongDirectionException("");
         }
         y = (y + field.getHeight()) % field.getHeight();
         x = (x + field.getWidth()) % field.getWidth();
@@ -106,7 +102,7 @@ public class Snake {
     public int move() {
         SnakesProto.Direction nextDirection = nextDirection(move);
         SnakesProto.GameState.Coord nextCellCoord = getNextCoord(snake.getPoints(HEAD_INDEX), nextDirection);
-        LinkedList<Integer> nextCell = field.getCoordValue(nextCellCoord);
+        List<Integer> nextCell = field.getCoordValue(nextCellCoord);
         ArrayList<SnakesProto.GameState.Coord> pointsList = new ArrayList<>(snake.getPointsList());
         int retVal = NOT_EAT_FOOD;
 

@@ -3,6 +3,7 @@ package ru.nsu.ccfit.tihomolov.task3b.game.model;
 
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import ru.nsu.ccfit.tihomolov.task3b.exception.WrongNetInfoException;
 import ru.nsu.ccfit.tihomolov.task3b.game.controller.Observer;
 import ru.nsu.ccfit.tihomolov.task3b.exception.SquareNotFoundException;
 import ru.nsu.ccfit.tihomolov.task3b.network.storage.HostNetworkInfo;
@@ -17,7 +18,6 @@ import static ru.nsu.ccfit.tihomolov.task3b.context.Context.PERCENT_50;
 public class Game implements Observable, Runnable {
     @Getter
     private final String name;
-    private SnakesProto.GameState gameState;
     private Observer gameController;
     private final Field field;
     private final Map<HostNetworkInfo, Integer> playersId = new HashMap<>();
@@ -27,6 +27,7 @@ public class Game implements Observable, Runnable {
     private LinkedList<SnakesProto.GameState.Coord> food = new LinkedList<>();
     private final SnakesProto.GameConfig gameConfig;
     private final int foodStatic;
+    private final Random random = new Random();
 
     public Game(SnakesProto.GameConfig config, String playerName, String gameName) {
         this.name = gameName;
@@ -37,14 +38,14 @@ public class Game implements Observable, Runnable {
         try {
             this.playersId.put(new HostNetworkInfo(InetAddress.getLocalHost(), 0), playerId);
         } catch (UnknownHostException e) {
-            throw new RuntimeException(e);
+            throw new WrongNetInfoException(e.getMessage());
         }
         this.players.put(playerId, Player.initMaster(playerId, playerName));
 
         try {
             this.snakes.put(playerId, new Snake(field, field.placeForSneak(playerId), playerId));
         } catch (SquareNotFoundException e) {
-            throw new RuntimeException(e);
+            log.error("Do not find place for sneak");
         }
         this.foodStatic = config.getFoodStatic();
 
@@ -56,7 +57,7 @@ public class Game implements Observable, Runnable {
         try {
             return new HostNetworkInfo(InetAddress.getByName(ip), port);
         } catch (UnknownHostException e) {
-            throw new RuntimeException(e);
+            throw new WrongNetInfoException(e.getMessage());
         }
     }
 
@@ -74,17 +75,20 @@ public class Game implements Observable, Runnable {
                 .forEach(player -> {
                     HostNetworkInfo hostNetworkInfo;
                     SnakesProto.NodeRole newRole = player.getRole();
+
                     if (!player.hasIpAddress()) {
                         hostNetworkInfo = lastMasterNetworkInfo;
                         newRole = SnakesProto.NodeRole.NORMAL;
+
                     } else if (player.getIpAddress().equals(selfHostNetworkInfo.getIp().toString().substring(1)) &&
                             player.getPort() == selfHostNetworkInfo.getPort()) {
                         try {
                             newRole = SnakesProto.NodeRole.MASTER;
                             hostNetworkInfo = new HostNetworkInfo(InetAddress.getLocalHost(), 0);
                         } catch (UnknownHostException e) {
-                            throw new RuntimeException(e);
+                            throw new WrongNetInfoException(e.getMessage());
                         }
+
                     } else {
                         hostNetworkInfo = initHostNetworkInfo(player.getIpAddress(), player.getPort());
                     }
@@ -94,9 +98,7 @@ public class Game implements Observable, Runnable {
                 });
 
         gameState.getSnakesList()
-                .forEach(snake -> {
-                    snakes.put(snake.getPlayerId(), new Snake(field, snake.getPointsList(), snake.getPlayerId(), snake.getHeadDirection()));
-                });
+                .forEach(snake -> snakes.put(snake.getPlayerId(), new Snake(field, snake.getPointsList(), snake.getPlayerId(), snake.getHeadDirection())));
 
         this.foodStatic = config.getFoodStatic();
     }
@@ -109,11 +111,9 @@ public class Game implements Observable, Runnable {
 
     private void addFood(int count) {
         if (count < 0) return;
-        Random random = new Random();
         int value;
         for (int i = 0; i < count - 1 && getEmptyCellsCount() > 0; i++) {
-            while (!field.getCoordValue((value = random.nextInt(field.getSize()))).isEmpty()) {
-            }
+            while (!field.getCoordValue((value = random.nextInt(field.getSize()))).isEmpty());
             field.addFoodToCord(value);
             food.add(field.indexToCoord(value));
         }
@@ -177,14 +177,13 @@ public class Game implements Observable, Runnable {
     }
 
     public void addMove(HostNetworkInfo hostNetworkInfo, SnakesProto.Direction move) {
-        Integer playerId;
-        playerId = playersId.get(hostNetworkInfo);
-        snakes.get(playerId).setMove(move);
+        Integer playerForMoveId = playersId.get(hostNetworkInfo);
+        snakes.get(playerForMoveId).setMove(move);
     }
 
     public void makeMove() {
         snakes.values().forEach(
-                (snake) -> {
+                snake -> {
                     int retValue = snake.move();
                     if (retValue == Snake.EAT_FOOD) {
                         SnakesProto.GamePlayer snakePlayer = players.get(snake.getPlayerId());
@@ -231,7 +230,6 @@ public class Game implements Observable, Runnable {
     }
 
     public void deleteFromField(Snake snake) {
-        Random random = new Random();
         field.deleteTailCoord(snake.getPoints().get(0), snake.getPlayerId());
         snake.getPoints()
                 .stream()

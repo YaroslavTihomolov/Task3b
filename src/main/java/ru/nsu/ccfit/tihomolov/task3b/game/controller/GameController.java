@@ -3,6 +3,7 @@ package ru.nsu.ccfit.tihomolov.task3b.game.controller;
 import javafx.application.Platform;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import ru.nsu.ccfit.tihomolov.task3b.exception.WrongNetInfoException;
 import ru.nsu.ccfit.tihomolov.task3b.game.model.GameMessageCreator;
 import ru.nsu.ccfit.tihomolov.task3b.game.model.StateOrder;
 import ru.nsu.ccfit.tihomolov.task3b.game.ui.View;
@@ -10,8 +11,6 @@ import ru.nsu.ccfit.tihomolov.task3b.game.model.Game;
 import ru.nsu.ccfit.tihomolov.task3b.network.NetworkController;
 import ru.nsu.ccfit.tihomolov.task3b.network.storage.HostNetworkInfo;
 import ru.nsu.ccfit.tihomolov.task3b.snakes.proto.SnakesProto;
-
-import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.LinkedList;
@@ -55,7 +54,7 @@ public class GameController implements Observer, GameListObservable {
         try {
             networkController.setMasterInfo(new HostNetworkInfo(InetAddress.getLocalHost(), 0));
         } catch (UnknownHostException e) {
-            throw new RuntimeException(e);
+            throw new WrongNetInfoException(e.getMessage());
         }
     }
 
@@ -83,7 +82,7 @@ public class GameController implements Observer, GameListObservable {
                                     HostNetworkInfo hostNetworkInfo = new HostNetworkInfo(InetAddress.getByName(player.getIpAddress()), player.getPort());
                                     networkController.getNetworkStorage().addPlayer(hostNetworkInfo, player.getRole());
                                 } catch (UnknownHostException e) {
-                                    throw new RuntimeException(e);
+                                    throw new WrongNetInfoException(e.getMessage());
                                 }
                             }
                         });
@@ -99,10 +98,10 @@ public class GameController implements Observer, GameListObservable {
     }
 
     public void addMove(InetAddress ip, int port, SnakesProto.Direction move) {
-        if (role == SnakesProto.NodeRole.MASTER) {
+        if (networkController.getNetworkStorage().getMainRoles().getSelf() == SnakesProto.NodeRole.MASTER) {
             game.addMove(new HostNetworkInfo(ip, port), move);
         } else {
-            networkController.addMessage(curGameInfo.getGameName(), GameMessageCreator.initGameMessage(
+            networkController.addMessage(GameMessageCreator.initGameMessage(
                                                                         SnakesProto.GameMessage.SteerMsg
                                                                         .newBuilder()
                                                                         .setDirection(move)
@@ -135,7 +134,7 @@ public class GameController implements Observer, GameListObservable {
     }
 
 
-    public void openJoinGame(HostNetworkInfo hostNetworkInfo, int selfPlayerId) {
+    public void openJoinGame() {
         Platform.runLater(() -> {
             view.closeJoinStage();
             view.openGameWindow(curGameInfo.getConfig(), this);
@@ -158,7 +157,7 @@ public class GameController implements Observer, GameListObservable {
         networkController.setSelfRole(joinMsg.getRequestedRole());
         networkController.setMasterInfo(gameInfo.getGameName());
         networkController.startSchedulePlayers(curGameInfo.getConfig().getStateDelayMs());
-        networkController.addMessage(gameInfo.getGameName(), GameMessageCreator.initGameMessage(joinMsg));
+        networkController.addMessage(GameMessageCreator.initGameMessage(joinMsg));
     }
 
     public SnakesProto.NodeRole checkDeputy(SnakesProto.NodeRole role) {
@@ -187,11 +186,7 @@ public class GameController implements Observer, GameListObservable {
     }
 
     public void openMainMenu() {
-        try {
-            stopCurrentGame();
-            view.openMenu();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        stopCurrentGame();
+        view.openMenu();
     }
 }
