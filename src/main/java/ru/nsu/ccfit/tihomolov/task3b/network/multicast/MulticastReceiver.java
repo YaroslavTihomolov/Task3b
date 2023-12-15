@@ -18,10 +18,10 @@ import java.util.Map;
 @Slf4j
 public class MulticastReceiver implements AutoCloseable {
     private final Map<String, MainNodeInfo> games;
-    private static final Integer MAX_AFK_TIME = 2000;
+    private final static Integer MAX_AFK_TIME = 2000;
     private final MulticastUDP multicastUDP;
 
-    public MulticastReceiver(Map<String, MainNodeInfo> games, MulticastUDP multicastUDP) {
+    public MulticastReceiver(Map<String, MainNodeInfo> games, MulticastUDP multicastUDP) throws IOException {
         this.multicastUDP = multicastUDP;
         this.games = games;
         this.multicastUDP.joinToGroup();
@@ -34,11 +34,13 @@ public class MulticastReceiver implements AutoCloseable {
      */
     public void receive() {
         SnakesProto.GameMessage.AnnouncementMsg announcementMsg;
-        MainNodeInfo oldMessage;
+        MainNodeInfo oldMessage = null;
+        //log.info("Start receive");
         try {
             DatagramPacket packet = multicastUDP.receive();
             SnakesProto.GameMessage gameMessage = SnakesProto.GameMessage.parseFrom(Arrays.copyOfRange(packet.getData(), 0, packet.getLength()));
             announcementMsg = gameMessage.getAnnouncement();
+            log.info("get game: " + announcementMsg.getGames(0).getGameName());
             oldMessage = games.put(announcementMsg.getGames(0).getGameName(), new MainNodeInfo(announcementMsg, System.currentTimeMillis(),
                     new HostNetworkInfo(packet.getAddress(), packet.getPort())));
             if (oldMessage == null) {

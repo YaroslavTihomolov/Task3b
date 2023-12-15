@@ -1,16 +1,14 @@
-package ru.nsu.ccfit.tihomolov.task3b.network;
+package ru.nsu.ccfit.tihomolov.task3b.game.controller;
 
 import com.google.protobuf.InvalidProtocolBufferException;
 import lombok.extern.slf4j.Slf4j;
-import ru.nsu.ccfit.tihomolov.task3b.exception.CanNotParseProtoObjectException;
-import ru.nsu.ccfit.tihomolov.task3b.exception.WrongProtoTypeException;
-import ru.nsu.ccfit.tihomolov.task3b.game.controller.GameController;
 import ru.nsu.ccfit.tihomolov.task3b.game.model.GameMessageCreator;
 import ru.nsu.ccfit.tihomolov.task3b.network.storage.HostNetworkInfo;
 import ru.nsu.ccfit.tihomolov.task3b.network.storage.Message;
 import ru.nsu.ccfit.tihomolov.task3b.network.storage.NetworkStorage;
 import ru.nsu.ccfit.tihomolov.task3b.network.storage.NodeInfo;
 import ru.nsu.ccfit.tihomolov.task3b.snakes.proto.SnakesProto;
+
 import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -24,6 +22,7 @@ public class MessageHandler implements Runnable {
     private final NetworkStorage networkStorage;
 
     public MessageHandler(GameController controller, DatagramPacket packet, NetworkStorage networkStorage) {
+        //log.info("Get message");
         this.packet = packet;
         this.controller = controller;
         this.networkStorage = networkStorage;
@@ -56,18 +55,19 @@ public class MessageHandler implements Runnable {
             SnakesProto.GameMessage gameMessage = SnakesProto.GameMessage.parseFrom(Arrays.copyOfRange(packet.getData(), 0, packet.getLength()));
 
             switch (gameMessage.getTypeCase()) {
-                case PING, ERROR, DISCOVER -> sendAckMessage(gameMessage);
-                case ACK -> handleAck(gameMessage);
+                case PING, ERROR -> sendAckMessage(gameMessage);
+                case ACK -> handleAck(gameMessage, hostNetworkInfo);
                 case STEER -> handleSteer(gameMessage, hostNetworkInfo);
                 case STATE -> stateHandler(gameMessage, hostNetworkInfo);
                 case JOIN -> joinHandler(gameMessage, hostNetworkInfo);
                 case ROLE_CHANGE -> handleChangeRole(gameMessage, hostNetworkInfo);
-                default -> throw new WrongProtoTypeException("no such command");
+                case DISCOVER -> {}
+                case TYPE_NOT_SET -> throw new RuntimeException("no such command");
             }
 
         } catch (InvalidProtocolBufferException e) {
             log.error(e.getMessage());
-            throw new WrongProtoTypeException(e.getMessage());
+            throw new RuntimeException(e);
         }
     }
 
@@ -87,13 +87,15 @@ public class MessageHandler implements Runnable {
                 .findFirst();
 
         deputy.ifPresent(gamePlayer -> {
+            //log.info(gamePlayer.getName() + " " + gamePlayer.getRole());
             try {
                 HostNetworkInfo deputyHostNetworkInfo = new HostNetworkInfo(InetAddress.getByName(gamePlayer.getIpAddress()), gamePlayer.getPort());
                 networkStorage.getMainRoles().setDeputy(deputyHostNetworkInfo);
+                //log.info("Set deputy " + gamePlayer.getName() + " " + gamePlayer.getRole());
                 networkStorage.updateMainRoles(hostNetworkInfo, deputyHostNetworkInfo);
             } catch (UnknownHostException e) {
                 log.error(e.getMessage());
-                throw new CanNotParseProtoObjectException(e.getMessage());
+                throw new RuntimeException(e);
             }
         });
     }
@@ -128,9 +130,9 @@ public class MessageHandler implements Runnable {
     }
 
 
-    private void handleAck(SnakesProto.GameMessage gameMessage) {
+    private void handleAck(SnakesProto.GameMessage gameMessage, HostNetworkInfo hostNetworkInfo) {
         if (gameMessage.getReceiverId() > 0) {
-            controller.openJoinGame();
+            controller.openJoinGame(hostNetworkInfo, gameMessage.getReceiverId());
             networkStorage.addPlayer(new HostNetworkInfo(packet.getAddress(), packet.getPort()), SnakesProto.NodeRole.MASTER);
         }
         networkStorage.removeFromMessageToSend(gameMessage.getMsgSeq());

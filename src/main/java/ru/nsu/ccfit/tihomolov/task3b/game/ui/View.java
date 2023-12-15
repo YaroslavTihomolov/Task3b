@@ -12,22 +12,24 @@ import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 import lombok.Getter;
 import lombok.Setter;
-import ru.nsu.ccfit.tihomolov.task3b.exception.JavafxException;
-import ru.nsu.ccfit.tihomolov.task3b.exception.WrongNetInfoException;
 import ru.nsu.ccfit.tihomolov.task3b.game.controller.GameWindowController;
 import ru.nsu.ccfit.tihomolov.task3b.game.controller.JoinController;
 import ru.nsu.ccfit.tihomolov.task3b.game.controller.MenuController;
 import ru.nsu.ccfit.tihomolov.task3b.game.controller.GameController;
 import ru.nsu.ccfit.tihomolov.task3b.snakes.proto.SnakesProto;
+
 import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Random;
 
 
 public class View {
-    private GraphicsContext gc;
+    private volatile GraphicsContext gc;
     private static final String PATH_TO_APPLE_IMAGE = "images/ic_apple.png";
     private static final String PATH_TO_GAME_MENU = "src/main/resources/fxml/menu.fxml";
     private static final String PATH_TO_GAME_WINDOW = "src/main/resources/fxml/gameWindow.fxml";
@@ -36,36 +38,43 @@ public class View {
     private GameController gameController;
     private static final Color DARK_GREEN = Color.web("AAD751");
     private static final Color GREEN = Color.web("A2D149");
-    private static final Color SNALE_COLOR = Color.web("4674E9");
-    private static final double CANVAS_WIDTH = 600;
-    private static final double CANVAS_HEIGHT = 600;
+    private static final Color SNAKE_COLOR = Color.web("4674E9");
+    private static final int CANVAS_WIDTH = 600;
+    private static final int CANVAS_HEIGHT = 600;
     private int width;
     private int height;
-    private double rectangleWidth;
-    private double rectangleHeight;
+    private int rectangleWidth;
+    private int rectangleHeight;
     private static final Image apple = new Image(PATH_TO_APPLE_IMAGE);
     private final Stage stage;
     private Stage secondStage;
+    private Pane rootGameWindow;
+    private Pane rootJoinWindow;
+    private Pane rootMenuWindow;
     @Getter
     private MenuController menuController;
     private GameWindowController gameWindowController;
     private final Canvas fieldCanvas = new Canvas(CANVAS_WIDTH, CANVAS_HEIGHT);
+    private final Map<Integer, Color> colors = new HashMap<>();
+    private static final List<Color> COLORS_LIST =
+            List.of(Color.BLACK,
+                    Color.BLUE,
+                    Color.RED,
+                    Color.YELLOW,
+                    Color.AQUAMARINE,
+                    Color.WHITE);
+    private int curColor = 0;
 
     public View(Stage stage) {
         stage.setResizable(false);
         this.stage = stage;
     }
 
-    public void openMenu() {
+    public void openMenu() throws IOException {
         FXMLLoader fxmlLoader = new FXMLLoader();
         File file = new File(PATH_TO_GAME_MENU);
-        Pane rootMenuWindow;
-        try {
-            fxmlLoader.setLocation(file.toURI().toURL());
-            rootMenuWindow = fxmlLoader.load();
-        } catch (IOException e) {
-            throw new JavafxException(e.getMessage());
-        }
+        fxmlLoader.setLocation(file.toURI().toURL());
+        rootMenuWindow = fxmlLoader.load();
         menuController = fxmlLoader.getController();
         gameController.addObserver(menuController);
         menuController.setGameController(gameController);
@@ -79,12 +88,11 @@ public class View {
         secondStage.setTitle("Join");
         FXMLLoader fxmlLoader = new FXMLLoader();
         File file = new File(PATH_TO_JOIN_MENU);
-        Pane rootJoinWindow;
         try {
             fxmlLoader.setLocation(file.toURI().toURL());
             rootJoinWindow = fxmlLoader.load();
         } catch (IOException e) {
-            throw new JavafxException(e.getMessage());
+            throw new RuntimeException(e);
         }
 
         Scene scene = new Scene(rootJoinWindow);
@@ -112,12 +120,11 @@ public class View {
         stage.setTitle("Snake");
 
 
-        Pane rootGameWindow;
         try {
             fxmlLoader.setLocation(file.toURI().toURL());
             rootGameWindow = fxmlLoader.load();
         } catch (IOException e) {
-            throw new JavafxException(e.getMessage());
+            throw new RuntimeException(e);
         }
         gameWindowController = fxmlLoader.getController();
         gameWindowController.setGameController(gameController);
@@ -152,7 +159,7 @@ public class View {
                     gameController.addMove(InetAddress.getLocalHost(), 0, SnakesProto.Direction.DOWN);
                 }
             } catch (UnknownHostException e) {
-                throw new WrongNetInfoException(e.getMessage());
+                throw new RuntimeException(e);
             }
 
         }));
@@ -161,11 +168,16 @@ public class View {
 
 
     private void drawSnake(SnakesProto.GameState.Snake snake) {
-        gc.setFill(SNALE_COLOR);
+        Color color = colors.get(snake.getPlayerId());
+        if (color == null) {
+            color = COLORS_LIST.get(curColor++);
+            colors.put(snake.getPlayerId(), color);
+        }
+        gc.setFill(color);
 
         int index = 0;
 
-        for (var point: snake.getPointsList()) {
+        for (var point : snake.getPointsList()) {
             if (index++ == 0) {
                 gc.fillRoundRect(point.getX() * rectangleWidth, point.getY() * rectangleWidth,
                         rectangleWidth - 1, rectangleHeight - 1, 35, 35);
@@ -178,7 +190,7 @@ public class View {
 
 
     private void drawFood(List<SnakesProto.GameState.Coord> food) {
-        for (var point: food) {
+        for (var point : food) {
             gc.drawImage(apple, point.getX() * rectangleWidth, point.getY() * rectangleHeight, rectangleWidth, rectangleHeight);
         }
     }
@@ -192,6 +204,7 @@ public class View {
             gameWindowController.updatePlayersScore(gameState.getPlayers().getPlayersList());
         });
     }
+
     private void drawBackground(GraphicsContext gc) {
         for (int i = 0; i < width; i++) {
             for (int j = 0; j < height; j++) {

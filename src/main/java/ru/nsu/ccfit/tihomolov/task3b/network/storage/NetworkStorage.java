@@ -8,7 +8,6 @@ import ru.nsu.ccfit.tihomolov.task3b.snakes.proto.SnakesProto;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 
 @Slf4j
 public class NetworkStorage {
@@ -55,16 +54,12 @@ public class NetworkStorage {
         mainRoles.setDeputy(deputyHostNetworkInfo);
     }
 
-    public ConcurrentMap<HostNetworkInfo, NodeInfo> getPlayersMap() {
+    public ConcurrentHashMap<HostNetworkInfo, NodeInfo> getPlayersMap() {
         return players;
     }
 
     public void clear() {
         players.clear();
         messagesToSend.clear();
-    }
-
-    public int getPlayersCount() {
-        return players.size();
     }
 }

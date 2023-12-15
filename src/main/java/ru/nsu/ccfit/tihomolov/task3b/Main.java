@@ -18,7 +18,7 @@ public class Main extends Application {
         GameController controller = new GameController(view);
         view.setGameController(controller);
         view.openMenu();
-        NetworkController networkController = new NetworkController(args[0], Integer.parseInt(args[1]), controller);
+        new NetworkController(args[0], Integer.parseInt(args[1]), controller);
     }
 
     public static void main(String[] args) {

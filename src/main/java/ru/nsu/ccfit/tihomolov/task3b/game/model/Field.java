@@ -2,7 +2,6 @@ package ru.nsu.ccfit.tihomolov.task3b.game.model;
 
 import lombok.Getter;
 import ru.nsu.ccfit.tihomolov.task3b.exception.SquareNotFoundException;
-import ru.nsu.ccfit.tihomolov.task3b.exception.WrongDirectionException;
 import ru.nsu.ccfit.tihomolov.task3b.snakes.proto.SnakesProto;
 
 import java.util.*;
@@ -11,28 +10,28 @@ import static ru.nsu.ccfit.tihomolov.task3b.context.Context.FOOD;
 
 
 public class Field {
-    private final ArrayList<LinkedList<Integer>> curField;
-    private final List<SnakesProto.GameState.Coord> food;
+    private final ArrayList<LinkedList<Integer>> field;
+    private final LinkedList<SnakesProto.GameState.Coord> food;
     @Getter
     private final int width;
     @Getter
     private final int height;
     @Getter
     private final int size;
-    private static final int SQUARE_NOT_SUITABLE = 2;
-    private static final int EMPTY_SQUARE_SIZE = 5;
-    private static final int SHIFT_TO_CENTER = 2;
-    private static final int NUMBER_DIRECTION_OPTION = 4;
+    private final static int SQUARE_NOT_SUITABLE = 2;
+    private final static int EMPTY_SQUARE_SIZE = 5;
+    private final static int SHIFT_TO_CENTER = 2;
+    private final static int NUMBER_DIRECTION_OPTION = 4;
     private final Random random = new Random();
 
-    public Field(int width, int height, List<SnakesProto.GameState.Coord> food) {
+    public Field(int width, int height, LinkedList<SnakesProto.GameState.Coord> food) {
         this.food = food;
         this.width = width;
         this.height = height;
         this.size = width * height;
-        this.curField = new ArrayList<>(width * height);
+        this.field = new ArrayList<>(width * height);
         for (int i = 0; i < size; i++) {
-            curField.add(new LinkedList<>());
+            field.add(new LinkedList<>());
         }
     }
 
@@ -43,34 +42,34 @@ public class Field {
     }
 
     public void removeFood(SnakesProto.GameState.Coord coord) {
-        curField.get(coordToIndex(coord)).remove(Integer.valueOf(FOOD));
+        field.get(coordToIndex(coord)).remove(Integer.valueOf(FOOD));
         food.remove(coord);
     }
 
     public void addCoordSnake(SnakesProto.GameState.Coord coord, int snakeID) {
-        curField.get(coordToIndex(coord)).add(snakeID);
+        field.get(coordToIndex(coord)).add(snakeID);
     }
 
     public void deleteTailCoord(SnakesProto.GameState.Coord coord, Integer snakeId) {
-        curField.get(coordToIndex(coord)).remove(snakeId);
+        field.get(coordToIndex(coord)).remove(snakeId);
     }
 
     private int checkSquare(int coord) {
         int center = coord + SHIFT_TO_CENTER * width + SHIFT_TO_CENTER;
-        if (!curField.get(center).isEmpty()) {
+        if (!field.get(center).isEmpty()) {
             return SQUARE_NOT_SUITABLE;
         }
 
         for (int i = 1; i < EMPTY_SQUARE_SIZE; i++) {
             for (int j = 0; j < EMPTY_SQUARE_SIZE; j++) {
-                if (!curField.get(coord + i * width + j).isEmpty() && curField.get(coord + i * width + j).get(0) != FOOD) {
+                if (!field.get(coord + i * width + j).isEmpty() && field.get(coord + i * width + j).get(0) != FOOD) {
                     return j;
                 }
             }
         }
 
-        if (!curField.get(center - 1).isEmpty() && !curField.get(center + 1).isEmpty() &&
-                !curField.get(center - width).isEmpty() && !curField.get(center + width).isEmpty()) {
+        if (!field.get(center - 1).isEmpty() && !field.get(center + 1).isEmpty() &&
+                !field.get(center - width).isEmpty() && !field.get(center + width).isEmpty()) {
             return SQUARE_NOT_SUITABLE;
         }
 
@@ -84,8 +83,7 @@ public class Field {
         int halfHeight = height / 2;
         for (int i = 0; i < height; i++) {
             if (height - (i + halfHeight) < 4) continue;
-            int j = 0;
-            while (j < width) {
+            for (int j = 0; j < width; j++) {
                 if (width - (i + halfWidth) < 4) continue;
                 int offsetX = (j + halfWidth) % width;
                 int offsetY = (i + halfHeight) % height;
@@ -95,7 +93,7 @@ public class Field {
                             .setY(offsetY)
                             .build();
                 }
-                j += coord + 1;
+                j += coord;
             }
         }
         throw new SquareNotFoundException("Square not Found");
@@ -107,6 +105,16 @@ public class Field {
                 .setX(index % width)
                 .build();
     }
+
+    /*public void addFood(int count) {
+        if (count < 0) return;
+        int value;
+        for (int i = 0; i < count - 1; i++) {
+            while(!field.get((value = random.nextInt(size))).isEmpty()) {}
+            food.add(indexToCoord(value));
+            field.get(value).add(FOOD);
+        }
+    }*/
 
     private int directionCoord(int value, int direction) {
         switch (direction) {
@@ -122,20 +130,41 @@ public class Field {
             case SnakesProto.Direction.RIGHT_VALUE -> {
                 return value + 1;
             }
-            default -> throw new WrongDirectionException("");
         }
+        throw new RuntimeException("Wrong direction");
     }
 
-    public List<Integer> getCoordValue(SnakesProto.GameState.Coord coord) {
+/*    public SnakesProto.GameState.Coord nextCoord(SnakesProto.GameState.Coord coord, int direction) {
+        int index = coordToIndex(coord);
+        switch (direction) {
+            case SnakesProto.Direction.UP_VALUE: { index += width; }
+            case SnakesProto.Direction.DOWN_VALUE: { index -= width; }
+            case SnakesProto.Direction.LEFT_VALUE: { index -= 1; }
+            case SnakesProto.Direction.RIGHT_VALUE: { index += 1; }
+        }
+        return indexToCoord(index);
+    }*/
+
+    public SnakesProto.GameState.Coord getNextCoord(SnakesProto.GameState.Coord coord, SnakesProto.Direction direction) {
         int index = coord.getY() * width + coord.getX();
-        return curField.get(index);
+        return indexToCoord(directionCoord(index, direction.getNumber()));
+    }
+
+    public LinkedList<Integer> getNextCoordValue(SnakesProto.GameState.Coord coord, SnakesProto.Direction direction) {
+        int index = coord.getY() * width + coord.getX();
+        return field.get(directionCoord(index, direction.getNumber()));
+    }
+
+    public LinkedList<Integer> getCoordValue(SnakesProto.GameState.Coord coord) {
+        int index = coord.getY() * width + coord.getX();
+        return field.get(index);
     }
 
     private SnakesProto.GameState.Coord findCoordForTail(SnakesProto.GameState.Coord coord) {
         int tailCoord;
         int index = coord.getY() * width + coord.getX();
         int startValue = random.nextInt(NUMBER_DIRECTION_OPTION);
-        while (!curField.get(tailCoord = directionCoord(index, startValue + 1)).isEmpty()) {
+        while (!field.get(tailCoord = directionCoord(index, startValue + 1)).isEmpty()) {
             startValue = (startValue + 1) % NUMBER_DIRECTION_OPTION;
         }
         int yPos = tailCoord / width;
@@ -154,13 +183,13 @@ public class Field {
         SnakesProto.GameState.Coord[] coords = new SnakesProto.GameState.Coord[2];
         coords[0] = findPlaceForSpace();
         coords[1] = findCoordForTail(coords[0]);
-        curField.get(coordToIndex(coords[0])).add(sneakId);
-        curField.get(coordToIndex(coords[1])).add(sneakId);
+        field.get(coordToIndex(coords[0])).add(sneakId);
+        field.get(coordToIndex(coords[1])).add(sneakId);
         return coords;
     }
 
     public void addFoodToCord(SnakesProto.GameState.Coord coord) {
-        curField.get(coordToIndex(coord)).add(FOOD);
+        field.get(coordToIndex(coord)).add(FOOD);
     }
 
     public void addFoodToCord(int index) {
@@ -168,7 +197,7 @@ public class Field {
         addFoodToCord(indexToCoord(index));
     }
 
-    public List<Integer> getCoordValue(int index) {
+    public LinkedList<Integer> getCoordValue(int index) {
         return getCoordValue(indexToCoord(index));
     }
 }

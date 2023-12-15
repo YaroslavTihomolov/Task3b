@@ -4,11 +4,11 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import ru.nsu.ccfit.tihomolov.task3b.game.controller.GameController;
 import ru.nsu.ccfit.tihomolov.task3b.game.model.GameMessageCreator;
+import ru.nsu.ccfit.tihomolov.task3b.network.multicast.MulticastService;
 import ru.nsu.ccfit.tihomolov.task3b.network.storage.HostNetworkInfo;
 import ru.nsu.ccfit.tihomolov.task3b.network.storage.Message;
 import ru.nsu.ccfit.tihomolov.task3b.network.storage.NetworkStorage;
 import ru.nsu.ccfit.tihomolov.task3b.network.storage.SentMessageScheduler;
-import ru.nsu.ccfit.tihomolov.task3b.network.udp.PingMaster;
 import ru.nsu.ccfit.tihomolov.task3b.network.udp.PlayersScheduler;
 import ru.nsu.ccfit.tihomolov.task3b.network.udp.ServiceUDP;
 import ru.nsu.ccfit.tihomolov.task3b.snakes.proto.SnakesProto;
@@ -19,6 +19,7 @@ import java.util.TimerTask;
 
 @Slf4j
 public class NetworkController {
+    private final MulticastService multicastService;
     private static final long SLEEP_TIME = 1000;
     private final GameController gameController;
     private SnakesProto.GameMessage.AnnouncementMsg announcementMsg;
@@ -28,11 +29,12 @@ public class NetworkController {
     private Timer timerAnnouncementMsg;
     private Thread messageSchedulerThread;
     private Thread playersSchedulerThread;
-    private Thread pingThread;
     private final ServiceUDP serviceUDP;
     private final int multicastPort;
 
     public NetworkController(String ip, int port, GameController gameController) throws IOException {
+        System.out.println(ip + " " + port);
+        this.multicastService = new MulticastService(ip, port, gameController, networkStorage.getMainNodesInfoMap());
         this.gameController = gameController;
         this.multicastIp = InetAddress.getByName(ip);
         this.multicastPort = port;
@@ -49,6 +51,10 @@ public class NetworkController {
         serviceUDP.start();
     }
 
+    /*public void startSend(SnakesProto.GameMessage.AnnouncementMsg announcementMsg) {
+        multicastService.sendAnnouncementMsg(announcementMsg);
+    }*/
+
     private void addMessage(HostNetworkInfo hostNetworkInfo, SnakesProto.GameMessage gameMessage) {
         networkStorage.addToMessageToSend(new Message(gameMessage, hostNetworkInfo));
     }
@@ -60,6 +66,7 @@ public class NetworkController {
             @Override
             public void run() {
                 addMessage(new HostNetworkInfo(multicastIp, multicastPort), GameMessageCreator.initGameMessage(announcementMsg));
+                log.info("Send AnnouncementMsg");
             }
         };
         log.info("Start multicast AnnouncementMsg");
@@ -78,9 +85,9 @@ public class NetworkController {
         this.announcementMsg = announcementMsg;
     }
 
-    public void addMessage(SnakesProto.GameMessage gameMessage) {
-        log.info(networkStorage.getMainRoles().getMaster() + " " + gameMessage.getTypeCase());
-        networkStorage.addToMessageToSend(new Message(gameMessage, networkStorage.getMainRoles().getMaster()));
+    public void addMessage(String gameName, SnakesProto.GameMessage gameMessage) {
+        HostNetworkInfo hostNetworkInfo = networkStorage.getMainNodesInfoMap().get(gameName).getHostNetworkInfo();
+        networkStorage.addToMessageToSend(new Message(gameMessage, hostNetworkInfo));
     }
 
     public void setSelfRole(SnakesProto.NodeRole role) {
@@ -104,8 +111,6 @@ public class NetworkController {
     }
 
     public void startSchedulePlayers(int delay) {
-        pingThread = new Thread(new PingMaster(networkStorage, delay));
-        pingThread.start();
         playersSchedulerThread = new Thread(new PlayersScheduler(networkStorage, delay, gameController));
         playersSchedulerThread.start();
     }
@@ -116,7 +121,6 @@ public class NetworkController {
 
     public void stopSchedule() {
         playersSchedulerThread.interrupt();
-        pingThread.interrupt();
         messageSchedulerThread.interrupt();
     }
 
