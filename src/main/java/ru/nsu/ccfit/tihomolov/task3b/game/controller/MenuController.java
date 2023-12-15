@@ -7,7 +7,7 @@ import javafx.scene.control.TextField;
 import javafx.scene.input.MouseEvent;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import ru.nsu.ccfit.tihomolov.task3b.snakes.proto.SnakesProto;
+import ru.nsu.ccfit.tihomolov.task3b.proto.SnakesProto;
 
 import java.util.HashMap;
 import java.util.List;
@@ -48,7 +48,7 @@ public class MenuController implements GameListObserver {
     public void joinToGame(MouseEvent mouseEvent) {
         String selectItem = games.getSelectionModel().getSelectedItem();
         if (mouseEvent.getClickCount() == 2 && selectItem != null) {
-            String gameName = selectItem.substring(0, selectItem.indexOf(' '));
+            String gameName = selectItem.substring(0, selectItem.lastIndexOf(' '));
             gameController.openJoinWindow(announcementMessages.get(gameName));
         } else {
             games.getSelectionModel().clearSelection();

@@ -1,5 +1,5 @@
 syntax = "proto2";
-option java_package = "ru.nsu.ccfit.tihomolov.task3b.snakes.proto";
+option java_package = "ru.nsu.ccfit.tihomolov.task3b.proto";
 option java_outer_classname = "SnakesProto";
 
 // Роль узла в топологии связей узлов в пределах игры

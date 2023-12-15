@@ -2,7 +2,7 @@ package ru.nsu.ccfit.tihomolov.task3b.network.storage;
 
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import ru.nsu.ccfit.tihomolov.task3b.snakes.proto.SnakesProto;
+import ru.nsu.ccfit.tihomolov.task3b.proto.SnakesProto;
 
 import java.util.Iterator;
 

@@ -6,7 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import ru.nsu.ccfit.tihomolov.task3b.game.controller.Observer;
 import ru.nsu.ccfit.tihomolov.task3b.exception.SquareNotFoundException;
 import ru.nsu.ccfit.tihomolov.task3b.network.storage.HostNetworkInfo;
-import ru.nsu.ccfit.tihomolov.task3b.snakes.proto.SnakesProto;
+import ru.nsu.ccfit.tihomolov.task3b.proto.SnakesProto;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.*;

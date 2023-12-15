@@ -7,7 +7,7 @@ import ru.nsu.ccfit.tihomolov.task3b.network.storage.HostNetworkInfo;
 import ru.nsu.ccfit.tihomolov.task3b.network.storage.Message;
 import ru.nsu.ccfit.tihomolov.task3b.network.storage.NetworkStorage;
 import ru.nsu.ccfit.tihomolov.task3b.network.storage.NodeInfo;
-import ru.nsu.ccfit.tihomolov.task3b.snakes.proto.SnakesProto;
+import ru.nsu.ccfit.tihomolov.task3b.proto.SnakesProto;
 
 import java.net.DatagramPacket;
 import java.net.InetAddress;
@@ -53,7 +53,7 @@ public class MessageHandler implements Runnable {
             NodeInfo senderInfo = networkStorage.getPlayerByKey(hostNetworkInfo);
             if (senderInfo != null) senderInfo.updateTime();
             SnakesProto.GameMessage gameMessage = SnakesProto.GameMessage.parseFrom(Arrays.copyOfRange(packet.getData(), 0, packet.getLength()));
-
+            log.info(gameMessage.toString());
             switch (gameMessage.getTypeCase()) {
                 case PING, ERROR -> sendAckMessage(gameMessage);
                 case ACK -> handleAck(gameMessage, hostNetworkInfo);
@@ -104,9 +104,9 @@ public class MessageHandler implements Runnable {
         SnakesProto.GameMessage.JoinMsg joinMsg = gameMessage.getJoin();
         SnakesProto.NodeRole realRole = controller.checkDeputy(joinMsg.getRequestedRole());
         int playerId = controller.joinMessage(joinMsg, hostNetworkInfo, realRole);
+        sendAnswer(playerId, gameMessage);
         log.info("Real role: " + realRole);
         addToPlayersIfJoin(playerId, realRole);
-        sendAnswer(playerId, gameMessage);
 
         if (realRole == SnakesProto.NodeRole.DEPUTY) {
             networkStorage.getMainRoles().setDeputy(hostNetworkInfo);

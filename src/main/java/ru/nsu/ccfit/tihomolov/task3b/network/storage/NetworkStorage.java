@@ -4,7 +4,7 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import ru.nsu.ccfit.tihomolov.task3b.game.model.MainNodeInfo;
-import ru.nsu.ccfit.tihomolov.task3b.snakes.proto.SnakesProto;
+import ru.nsu.ccfit.tihomolov.task3b.proto.SnakesProto;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;

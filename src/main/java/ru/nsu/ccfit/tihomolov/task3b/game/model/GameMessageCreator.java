@@ -1,6 +1,6 @@
 package ru.nsu.ccfit.tihomolov.task3b.game.model;
 
-import ru.nsu.ccfit.tihomolov.task3b.snakes.proto.SnakesProto;
+import ru.nsu.ccfit.tihomolov.task3b.proto.SnakesProto;
 
 public class GameMessageCreator {
     public static SnakesProto.GameMessage initGameMessage(SnakesProto.GameMessage.AnnouncementMsg announcementMsg) {

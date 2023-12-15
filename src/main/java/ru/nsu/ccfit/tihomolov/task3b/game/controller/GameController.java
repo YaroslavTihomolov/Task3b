@@ -9,7 +9,7 @@ import ru.nsu.ccfit.tihomolov.task3b.game.ui.View;
 import ru.nsu.ccfit.tihomolov.task3b.game.model.Game;
 import ru.nsu.ccfit.tihomolov.task3b.network.NetworkController;
 import ru.nsu.ccfit.tihomolov.task3b.network.storage.HostNetworkInfo;
-import ru.nsu.ccfit.tihomolov.task3b.snakes.proto.SnakesProto;
+import ru.nsu.ccfit.tihomolov.task3b.proto.SnakesProto;
 
 import java.io.IOException;
 import java.net.InetAddress;

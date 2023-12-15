@@ -3,14 +3,14 @@ package ru.nsu.ccfit.tihomolov.task3b.game.model;
 
 import lombok.Getter;
 import lombok.Setter;
-import ru.nsu.ccfit.tihomolov.task3b.snakes.proto.SnakesProto;
+import ru.nsu.ccfit.tihomolov.task3b.proto.SnakesProto;
 
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
 import static ru.nsu.ccfit.tihomolov.task3b.context.Context.*;
-import static ru.nsu.ccfit.tihomolov.task3b.snakes.proto.SnakesProto.GameState.Snake.SnakeState.ALIVE;
+import static ru.nsu.ccfit.tihomolov.task3b.proto.SnakesProto.GameState.Snake.SnakeState.ALIVE;
 
 
 @Getter

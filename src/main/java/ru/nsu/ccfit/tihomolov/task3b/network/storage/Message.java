@@ -3,7 +3,7 @@ package ru.nsu.ccfit.tihomolov.task3b.network.storage;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
-import ru.nsu.ccfit.tihomolov.task3b.snakes.proto.SnakesProto;
+import ru.nsu.ccfit.tihomolov.task3b.proto.SnakesProto;
 
 import java.net.DatagramPacket;
 import java.net.InetAddress;

@@ -2,7 +2,7 @@ package ru.nsu.ccfit.tihomolov.task3b.game.model;
 
 import lombok.Getter;
 import ru.nsu.ccfit.tihomolov.task3b.exception.SquareNotFoundException;
-import ru.nsu.ccfit.tihomolov.task3b.snakes.proto.SnakesProto;
+import ru.nsu.ccfit.tihomolov.task3b.proto.SnakesProto;
 
 import java.util.*;
 

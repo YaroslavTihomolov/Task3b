@@ -16,7 +16,7 @@ import ru.nsu.ccfit.tihomolov.task3b.game.controller.GameWindowController;
 import ru.nsu.ccfit.tihomolov.task3b.game.controller.JoinController;
 import ru.nsu.ccfit.tihomolov.task3b.game.controller.MenuController;
 import ru.nsu.ccfit.tihomolov.task3b.game.controller.GameController;
-import ru.nsu.ccfit.tihomolov.task3b.snakes.proto.SnakesProto;
+import ru.nsu.ccfit.tihomolov.task3b.proto.SnakesProto;
 
 import java.io.File;
 import java.io.IOException;
@@ -25,7 +25,6 @@ import java.net.UnknownHostException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 
 
 public class View {

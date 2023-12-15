@@ -3,7 +3,7 @@ package ru.nsu.ccfit.tihomolov.task3b.game.model;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import ru.nsu.ccfit.tihomolov.task3b.network.storage.HostNetworkInfo;
-import ru.nsu.ccfit.tihomolov.task3b.snakes.proto.SnakesProto;
+import ru.nsu.ccfit.tihomolov.task3b.proto.SnakesProto;
 
 
 @Getter

@@ -55,7 +55,7 @@ public class ReceiverUDP implements Runnable {
             datagramSocket.receive(packet);
             threadPoolExecutor.submit(new MessageHandler(gameController, packet, networkStorage));
         } catch (IOException e) {
-            //log.info("Do not get messages");
+            log.info("Do not get messages");
         }
     }
 }

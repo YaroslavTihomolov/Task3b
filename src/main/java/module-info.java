@@ -10,6 +10,8 @@ module ru.nsu.ccfit.tihomolov.task3b {
 
     opens ru.nsu.ccfit.tihomolov.task3b to javafx.fxml;
     exports ru.nsu.ccfit.tihomolov.task3b;
+    opens ru.nsu.ccfit.tihomolov.task3b.proto;
+    exports ru.nsu.ccfit.tihomolov.task3b.proto;
     opens ru.nsu.ccfit.tihomolov.task3b.game.controller to javafx.fxml;
     exports ru.nsu.ccfit.tihomolov.task3b.game.controller;
     exports ru.nsu.ccfit.tihomolov.task3b.network;

@@ -7,7 +7,7 @@ import ru.nsu.ccfit.tihomolov.task3b.network.storage.HostNetworkInfo;
 import ru.nsu.ccfit.tihomolov.task3b.network.storage.Message;
 import ru.nsu.ccfit.tihomolov.task3b.network.storage.NetworkStorage;
 import ru.nsu.ccfit.tihomolov.task3b.network.storage.NodeInfo;
-import ru.nsu.ccfit.tihomolov.task3b.snakes.proto.SnakesProto;
+import ru.nsu.ccfit.tihomolov.task3b.proto.SnakesProto;
 
 import java.util.LinkedList;
 import java.util.Map;
@@ -56,7 +56,8 @@ public class PlayersScheduler implements Runnable {
                     });
             playersToRemove.forEach(afkPlayer -> {
                 networkStorage.removePlayer(afkPlayer);
-                if (networkStorage.getMainRoles().getSelf() == SnakesProto.NodeRole.MASTER) gameController.handleAfkPlayer(afkPlayer);
+                if (networkStorage.getMainRoles().getSelf() == SnakesProto.NodeRole.MASTER)
+                    gameController.handleAfkPlayer(afkPlayer);
             });
             try {
                 Thread.sleep(1);

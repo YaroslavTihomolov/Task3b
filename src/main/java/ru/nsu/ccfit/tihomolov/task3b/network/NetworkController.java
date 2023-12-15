@@ -11,7 +11,7 @@ import ru.nsu.ccfit.tihomolov.task3b.network.storage.NetworkStorage;
 import ru.nsu.ccfit.tihomolov.task3b.network.storage.SentMessageScheduler;
 import ru.nsu.ccfit.tihomolov.task3b.network.udp.PlayersScheduler;
 import ru.nsu.ccfit.tihomolov.task3b.network.udp.ServiceUDP;
-import ru.nsu.ccfit.tihomolov.task3b.snakes.proto.SnakesProto;
+import ru.nsu.ccfit.tihomolov.task3b.proto.SnakesProto;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.util.Timer;

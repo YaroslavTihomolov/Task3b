@@ -4,7 +4,7 @@ import com.google.protobuf.InvalidProtocolBufferException;
 import lombok.extern.slf4j.Slf4j;
 import ru.nsu.ccfit.tihomolov.task3b.network.storage.HostNetworkInfo;
 import ru.nsu.ccfit.tihomolov.task3b.game.model.MainNodeInfo;
-import ru.nsu.ccfit.tihomolov.task3b.snakes.proto.SnakesProto;
+import ru.nsu.ccfit.tihomolov.task3b.proto.SnakesProto;
 
 import java.io.IOException;
 import java.net.DatagramPacket;

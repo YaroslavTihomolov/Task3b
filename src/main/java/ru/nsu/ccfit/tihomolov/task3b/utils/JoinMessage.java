@@ -1,6 +1,6 @@
 package ru.nsu.ccfit.tihomolov.task3b.utils;
 
-import ru.nsu.ccfit.tihomolov.task3b.snakes.proto.SnakesProto;
+import ru.nsu.ccfit.tihomolov.task3b.proto.SnakesProto;
 
 public class JoinMessage {
     public static SnakesProto.GameMessage.JoinMsg initJoinMessage(String gameName, String playerName, SnakesProto.NodeRole role) {

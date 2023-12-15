@@ -12,7 +12,7 @@ diff --git a/src/main/java/ru/nsu/ccfit/tihomolov/task3b/game/model/Game.java b/
  import ru.nsu.ccfit.tihomolov.task3b.exception.SquareNotFoundException;
 -import ru.nsu.ccfit.tihomolov.task3b.network.HostNetworkInfo;
 +import ru.nsu.ccfit.tihomolov.task3b.network.storage.HostNetworkInfo;
- import ru.nsu.ccfit.tihomolov.task3b.snakes.proto.SnakesProto;
+ import ru.nsu.ccfit.tihomolov.task3b.proto.SnakesProto;
  
  import java.net.InetAddress;
 @@ -108,12 +108,13 @@
@@ -74,7 +74,7 @@ diff --git a/src/main/java/ru/nsu/ccfit/tihomolov/task3b/game/model/MainNodeInfo
  import lombok.Getter;
 -import ru.nsu.ccfit.tihomolov.task3b.network.HostNetworkInfo;
 +import ru.nsu.ccfit.tihomolov.task3b.network.storage.HostNetworkInfo;
- import ru.nsu.ccfit.tihomolov.task3b.snakes.proto.SnakesProto;
+ import ru.nsu.ccfit.tihomolov.task3b.proto.SnakesProto;
  
  
 Index: src/main/java/ru/nsu/ccfit/tihomolov/task3b/game/model/GameMessageCreator.java
@@ -118,7 +118,7 @@ diff --git a/src/main/java/ru/nsu/ccfit/tihomolov/task3b/game/controller/GameCon
  import ru.nsu.ccfit.tihomolov.task3b.network.NetworkController;
 +import ru.nsu.ccfit.tihomolov.task3b.network.storage.HostNetworkInfo;
 +import ru.nsu.ccfit.tihomolov.task3b.network.storage.NodeInfo;
- import ru.nsu.ccfit.tihomolov.task3b.snakes.proto.SnakesProto;
+ import ru.nsu.ccfit.tihomolov.task3b.proto.SnakesProto;
  import java.net.InetAddress;
  import java.util.List;
 @@ -47,22 +49,24 @@
@@ -179,7 +179,7 @@ diff --git a/src/main/java/ru/nsu/ccfit/tihomolov/task3b/game/controller/Message
 +import ru.nsu.ccfit.tihomolov.task3b.network.storage.Message;
 +import ru.nsu.ccfit.tihomolov.task3b.network.storage.NetworkStorage;
 +import ru.nsu.ccfit.tihomolov.task3b.network.storage.NodeInfo;
- import ru.nsu.ccfit.tihomolov.task3b.snakes.proto.SnakesProto;
+ import ru.nsu.ccfit.tihomolov.task3b.proto.SnakesProto;
  
  import java.net.DatagramPacket;
 @@ -45,12 +46,12 @@
@@ -392,7 +392,7 @@ new file mode 100644
 +import ru.nsu.ccfit.tihomolov.task3b.network.storage.MainRoles;
 +import ru.nsu.ccfit.tihomolov.task3b.network.storage.Message;
 +import ru.nsu.ccfit.tihomolov.task3b.network.storage.NetworkStorage;
-+import ru.nsu.ccfit.tihomolov.task3b.snakes.proto.SnakesProto;
++import ru.nsu.ccfit.tihomolov.task3b.proto.SnakesProto;
 +
 +import java.net.DatagramPacket;
 +
@@ -437,7 +437,7 @@ new file mode 100644
 +import lombok.AllArgsConstructor;
 +import lombok.Getter;
 +import lombok.Setter;
-+import ru.nsu.ccfit.tihomolov.task3b.snakes.proto.SnakesProto;
++import ru.nsu.ccfit.tihomolov.task3b.proto.SnakesProto;
 +
 +import java.net.DatagramPacket;
 +import java.net.InetAddress;
@@ -485,7 +485,7 @@ new file mode 100644
 +import lombok.AllArgsConstructor;
 +import lombok.Getter;
 +import lombok.Setter;
-+import ru.nsu.ccfit.tihomolov.task3b.snakes.proto.SnakesProto;
++import ru.nsu.ccfit.tihomolov.task3b.proto.SnakesProto;
 +
 +@Getter
 +public class NodeInfo {
@@ -517,7 +517,7 @@ new file mode 100644
 +import lombok.AllArgsConstructor;
 +import lombok.Data;
 +import lombok.NoArgsConstructor;
-+import ru.nsu.ccfit.tihomolov.task3b.snakes.proto.SnakesProto;
++import ru.nsu.ccfit.tihomolov.task3b.proto.SnakesProto;
 +
 +@Data
 +public class MainRoles {
@@ -625,7 +625,7 @@ new file mode 100644
 +
 +import lombok.Setter;
 +import lombok.extern.slf4j.Slf4j;
-+import ru.nsu.ccfit.tihomolov.task3b.snakes.proto.SnakesProto;
++import ru.nsu.ccfit.tihomolov.task3b.proto.SnakesProto;
 +
 +import java.util.Iterator;
 +
@@ -687,7 +687,7 @@ diff --git a/src/main/java/ru/nsu/ccfit/tihomolov/task3b/network/multicast/Multi
  import ru.nsu.ccfit.tihomolov.task3b.game.controller.GameController;
  import ru.nsu.ccfit.tihomolov.task3b.game.model.MainNodeInfo;
 -import ru.nsu.ccfit.tihomolov.task3b.network.HostNetworkInfo;
- import ru.nsu.ccfit.tihomolov.task3b.snakes.proto.SnakesProto;
+ import ru.nsu.ccfit.tihomolov.task3b.proto.SnakesProto;
  
  import java.io.IOException;
 Index: src/main/java/ru/nsu/ccfit/tihomolov/task3b/network/multicast/MulticastReceiver.java
@@ -705,7 +705,7 @@ diff --git a/src/main/java/ru/nsu/ccfit/tihomolov/task3b/network/multicast/Multi
 -import ru.nsu.ccfit.tihomolov.task3b.network.HostNetworkInfo;
 +import ru.nsu.ccfit.tihomolov.task3b.network.storage.HostNetworkInfo;
  import ru.nsu.ccfit.tihomolov.task3b.game.model.MainNodeInfo;
- import ru.nsu.ccfit.tihomolov.task3b.snakes.proto.SnakesProto;
+ import ru.nsu.ccfit.tihomolov.task3b.proto.SnakesProto;
  
  import java.io.IOException;
  import java.net.DatagramPacket;
@@ -731,7 +731,7 @@ diff --git a/src/main/java/ru/nsu/ccfit/tihomolov/task3b/network/NetworkControll
 +import ru.nsu.ccfit.tihomolov.task3b.network.storage.NetworkStorage;
 +import ru.nsu.ccfit.tihomolov.task3b.network.storage.SentMessageScheduler;
  import ru.nsu.ccfit.tihomolov.task3b.network.udp.ServiceUDP;
- import ru.nsu.ccfit.tihomolov.task3b.snakes.proto.SnakesProto;
+ import ru.nsu.ccfit.tihomolov.task3b.proto.SnakesProto;
  
 @@ -44,8 +48,7 @@
  
@@ -792,7 +792,7 @@ deleted file mode 100644
 -import lombok.AllArgsConstructor;
 -import lombok.Getter;
 -import lombok.Setter;
--import ru.nsu.ccfit.tihomolov.task3b.snakes.proto.SnakesProto;
+-import ru.nsu.ccfit.tihomolov.task3b.proto.SnakesProto;
 -
 -import java.net.DatagramPacket;
 -import java.net.InetAddress;
@@ -828,7 +828,7 @@ deleted file mode 100644
 -
 -import lombok.Setter;
 -import lombok.extern.slf4j.Slf4j;
--import ru.nsu.ccfit.tihomolov.task3b.snakes.proto.SnakesProto;
+-import ru.nsu.ccfit.tihomolov.task3b.proto.SnakesProto;
 -
 -import java.util.Iterator;
 -import java.util.Map;
@@ -886,7 +886,7 @@ deleted file mode 100644
 @@ -1,8 +0,0 @@
 -package ru.nsu.ccfit.tihomolov.task3b.network;
 -
--import ru.nsu.ccfit.tihomolov.task3b.snakes.proto.SnakesProto;
+-import ru.nsu.ccfit.tihomolov.task3b.proto.SnakesProto;
 -
 -import java.net.DatagramPacket;
 -
