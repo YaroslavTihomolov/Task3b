@@ -184,7 +184,7 @@ public class Game implements Observable, Runnable {
 
     public void makeMove() {
         snakes.values().forEach(
-                (snake) -> {
+                snake -> {
                     int retValue = snake.move();
                     if (retValue == Snake.EAT_FOOD) {
                         SnakesProto.GamePlayer snakePlayer = players.get(snake.getPlayerId());

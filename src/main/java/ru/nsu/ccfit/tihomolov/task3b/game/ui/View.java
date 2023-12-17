@@ -178,10 +178,10 @@ public class View {
 
         for (var point : snake.getPointsList()) {
             if (index++ == 0) {
-                gc.fillRoundRect(point.getX() * rectangleWidth, point.getY() * rectangleWidth,
+                gc.fillRoundRect(point.getX() * rectangleWidth, point.getY() * rectangleHeight,
                         rectangleWidth - 1, rectangleHeight - 1, 35, 35);
             } else {
-                gc.fillRoundRect(point.getX() * rectangleWidth, point.getY() * rectangleWidth,
+                gc.fillRoundRect(point.getX() * rectangleWidth, point.getY() * rectangleHeight,
                         rectangleWidth - 1, rectangleHeight - 1, 20, 20);
             }
         }
