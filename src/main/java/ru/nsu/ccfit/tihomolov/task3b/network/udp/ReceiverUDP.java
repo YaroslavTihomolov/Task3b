@@ -33,17 +33,9 @@ public class ReceiverUDP implements Runnable {
     public void run() {
         while (!Thread.currentThread().isInterrupted()) {
             long timeOFStartReceive = System.currentTimeMillis();
-            synchronized (datagramSocket) {
-                while (System.currentTimeMillis() - timeOFStartReceive < PERIOD) {
-                    receive();
-                }
-                datagramSocket.notifyAll();
-                try {
-                    datagramSocket.wait();
-                } catch (InterruptedException e) {
-                    log.error(e.getMessage());
-                    Thread.currentThread().interrupt();
-                }
+            while (System.currentTimeMillis() - timeOFStartReceive < PERIOD) {
+                log.info("Recive");
+                receive();
             }
         }
     }

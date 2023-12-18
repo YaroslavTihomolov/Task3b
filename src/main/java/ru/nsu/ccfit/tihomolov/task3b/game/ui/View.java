@@ -79,6 +79,9 @@ public class View {
         menuController.setGameController(gameController);
         Scene scene = new Scene(rootMenuWindow);
         stage.setScene(scene);
+        stage.setOnCloseRequest(event -> {
+            System.exit(0);
+        });
         stage.show();
     }
 

@@ -53,13 +53,13 @@ public class MessageHandler implements Runnable {
             NodeInfo senderInfo = networkStorage.getPlayerByKey(hostNetworkInfo);
             if (senderInfo != null) senderInfo.updateTime();
             SnakesProto.GameMessage gameMessage = SnakesProto.GameMessage.parseFrom(Arrays.copyOfRange(packet.getData(), 0, packet.getLength()));
-            log.info(gameMessage.toString());
+            //log.info(gameMessage.toString() + " " + System.currentTimeMillis());
             switch (gameMessage.getTypeCase()) {
                 case PING, ERROR -> sendAckMessage(gameMessage);
                 case ACK -> handleAck(gameMessage, hostNetworkInfo);
                 case STEER -> handleSteer(gameMessage, hostNetworkInfo);
                 case STATE -> stateHandler(gameMessage, hostNetworkInfo);
-                case JOIN -> joinHandler(gameMessage, hostNetworkInfo);
+                case JOIN -> joinHandler(gameMessage, hostNetworkInfo, senderInfo);
                 case ROLE_CHANGE -> handleChangeRole(gameMessage, hostNetworkInfo);
                 case DISCOVER -> {}
                 case TYPE_NOT_SET -> throw new RuntimeException("no such command");
@@ -100,7 +100,11 @@ public class MessageHandler implements Runnable {
         });
     }
 
-    private void joinHandler(SnakesProto.GameMessage gameMessage, HostNetworkInfo hostNetworkInfo) {
+    private void joinHandler(SnakesProto.GameMessage gameMessage, HostNetworkInfo hostNetworkInfo, NodeInfo sender) {
+        if (sender != null) {
+            sendAnswer(-1, gameMessage);
+            return;
+        }
         SnakesProto.GameMessage.JoinMsg joinMsg = gameMessage.getJoin();
         SnakesProto.NodeRole realRole = controller.checkDeputy(joinMsg.getRequestedRole());
         int playerId = controller.joinMessage(joinMsg, hostNetworkInfo, realRole);

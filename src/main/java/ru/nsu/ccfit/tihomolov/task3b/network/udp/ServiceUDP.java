@@ -3,8 +3,9 @@ package ru.nsu.ccfit.tihomolov.task3b.network.udp;
 import lombok.extern.slf4j.Slf4j;
 import ru.nsu.ccfit.tihomolov.task3b.game.controller.GameController;
 import ru.nsu.ccfit.tihomolov.task3b.network.storage.NetworkStorage;
-import java.net.DatagramSocket;
-import java.net.SocketException;
+
+import java.io.IOException;
+import java.net.*;
 
 
 @Slf4j
@@ -15,8 +16,10 @@ public class ServiceUDP {
     private Thread senderThread;
     private Thread recieverThread;
 
-    public ServiceUDP(NetworkStorage networkStorage, GameController gameController) throws SocketException {
+    public ServiceUDP(NetworkStorage networkStorage, GameController gameController) throws IOException {
         DatagramSocket datagramSocket = new DatagramSocket();
+        SocketAddress mcastaddr = new java.net.InetSocketAddress(InetAddress.getByName("239.192.0.4"), 9192);
+        datagramSocket.joinGroup(mcastaddr, null);
         this.receiverUDP = new ReceiverUDP(networkStorage, datagramSocket, gameController);
         this.senderUDP = new SenderUDP(datagramSocket, networkStorage);
         datagramSocket.setSoTimeout(TIMEOUT_SOCKET);

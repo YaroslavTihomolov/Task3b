@@ -2,6 +2,7 @@ package ru.nsu.ccfit.tihomolov.task3b.network.udp;
 
 import lombok.extern.slf4j.Slf4j;
 import ru.nsu.ccfit.tihomolov.task3b.network.storage.NetworkStorage;
+
 import java.io.IOException;
 import java.net.DatagramSocket;
 
@@ -18,24 +19,15 @@ public class SenderUDP implements Runnable {
 
     public void run() {
         while (!Thread.currentThread().isInterrupted()) {
-            synchronized (datagramSocket) {
-                for (var message : networkStorage.getMessagesForSend()) {
-                    try {
-                        if (message.getSendTime() != null) continue;
-                        datagramSocket.send(message.getDatagramPacket());
-                        //log.info(message.getType() + " " + message.getMsgSeq());
-                        message.setSendTime(System.currentTimeMillis());
-                        networkStorage.setLastSendTime(System.currentTimeMillis());
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
-                }
-                datagramSocket.notifyAll();
+            for (var message : networkStorage.getMessagesForSend()) {
                 try {
-                    datagramSocket.wait();
-                } catch (InterruptedException e) {
-                    log.error(e.getMessage());
-                    Thread.currentThread().interrupt();
+                    if (message.getSendTime() != null) continue;
+                    datagramSocket.send(message.getDatagramPacket());
+                    //log.info(message.getType() + " " + message.getMsgSeq());
+                    message.setSendTime(System.currentTimeMillis());
+                    networkStorage.setLastSendTime(System.currentTimeMillis());
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
                 }
             }
         }
