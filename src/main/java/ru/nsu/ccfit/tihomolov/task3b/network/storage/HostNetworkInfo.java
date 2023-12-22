@@ -10,4 +10,12 @@ import java.net.InetAddress;
 public class HostNetworkInfo {
     private InetAddress ip;
     private int port;
+
+    public static String handleIp(String hostIp) {
+        if (hostIp.charAt(0) == '/') {
+            return hostIp.substring(1);
+        } else {
+            return hostIp;
+        }
+    }
 }

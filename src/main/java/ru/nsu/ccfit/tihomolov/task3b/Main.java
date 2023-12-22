@@ -7,6 +7,8 @@ import ru.nsu.ccfit.tihomolov.task3b.network.NetworkController;
 import ru.nsu.ccfit.tihomolov.task3b.game.ui.View;
 
 import java.io.IOException;
+import java.net.NetworkInterface;
+import java.net.SocketException;
 
 
 public class Main extends Application {
@@ -21,7 +23,20 @@ public class Main extends Application {
         new NetworkController(args[0], Integer.parseInt(args[1]), controller);
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws SocketException {
+        var net = NetworkInterface.getNetworkInterfaces();
+        while (net.hasMoreElements()){
+            var inter = net.nextElement();
+            if(inter.supportsMulticast()){
+                System.out.println(inter.getName());
+                var addres = inter.getInetAddresses();
+                while (addres.hasMoreElements()){
+                    System.out.println(addres.nextElement());
+                }
+            }
+            System.out.println();
+        }
+
         Main.args = args;
         launch();
     }

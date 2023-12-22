@@ -20,6 +20,9 @@ public class MessageHandler implements Runnable {
     private final DatagramPacket packet;
     private final GameController controller;
     private final NetworkStorage networkStorage;
+    private static final SnakesProto.GameMessage.AckMsg ack = SnakesProto.GameMessage.AckMsg.newBuilder().build();
+    private static final SnakesProto.GameMessage gameAck = GameMessageCreator.initGameMessage(SnakesProto.GameMessage.AckMsg.newBuilder().build());
+    private static final SnakesProto.GameMessage error = GameMessageCreator.initGameMessage(SnakesProto.GameMessage.ErrorMsg.newBuilder().setErrorMessage("").build());
 
     public MessageHandler(GameController controller, DatagramPacket packet, NetworkStorage networkStorage) {
         //log.info("Get message");
@@ -31,18 +34,17 @@ public class MessageHandler implements Runnable {
     private void sendAnswer(int playerId, SnakesProto.GameMessage gameMessage) {
         if (playerId > 0) {
             networkStorage.addToMessageToSend(new Message(gameMessage.getMsgSeq(),
-                    GameMessageCreator.initGameMessage(SnakesProto.GameMessage.AckMsg.newBuilder().build(), playerId),
+                    GameMessageCreator.initGameMessage(ack, playerId),
                     SnakesProto.GameMessage.TypeCase.ACK, packet.getAddress(), packet.getPort()));
         } else {
             networkStorage.addToMessageToSend(new Message(gameMessage.getMsgSeq(),
-                    GameMessageCreator.initGameMessage(SnakesProto.GameMessage.ErrorMsg.newBuilder().build()),
-                    SnakesProto.GameMessage.TypeCase.ERROR, packet.getAddress(), packet.getPort()));
+                    error, SnakesProto.GameMessage.TypeCase.ERROR, packet.getAddress(), packet.getPort()));
         }
     }
 
     private void sendAckMessage(SnakesProto.GameMessage gameMessage) {
         networkStorage.addToMessageToSend(new Message(gameMessage.getMsgSeq(),
-                GameMessageCreator.initGameMessage(SnakesProto.GameMessage.AckMsg.newBuilder().build()),
+                gameAck,
                 SnakesProto.GameMessage.TypeCase.ACK, packet.getAddress(), packet.getPort()));
     }
 
@@ -59,9 +61,10 @@ public class MessageHandler implements Runnable {
                 case ACK -> handleAck(gameMessage, hostNetworkInfo);
                 case STEER -> handleSteer(gameMessage, hostNetworkInfo);
                 case STATE -> stateHandler(gameMessage, hostNetworkInfo);
-                case JOIN -> joinHandler(gameMessage, hostNetworkInfo, senderInfo);
+                case JOIN -> joinHandler(gameMessage, hostNetworkInfo);
                 case ROLE_CHANGE -> handleChangeRole(gameMessage, hostNetworkInfo);
-                case DISCOVER -> {}
+                case DISCOVER -> {
+                }
                 case TYPE_NOT_SET -> throw new RuntimeException("no such command");
             }
 
@@ -85,11 +88,12 @@ public class MessageHandler implements Runnable {
         Optional<SnakesProto.GamePlayer> deputy = gameState.getPlayers().getPlayersList().stream()
                 .filter(player -> player.getRole() == SnakesProto.NodeRole.DEPUTY)
                 .findFirst();
-
         deputy.ifPresent(gamePlayer -> {
             //log.info(gamePlayer.getName() + " " + gamePlayer.getRole());
             try {
-                HostNetworkInfo deputyHostNetworkInfo = new HostNetworkInfo(InetAddress.getByName(gamePlayer.getIpAddress()), gamePlayer.getPort());
+                String ip = HostNetworkInfo.handleIp(gamePlayer.getIpAddress());
+                HostNetworkInfo deputyHostNetworkInfo = new HostNetworkInfo(InetAddress.getByName(ip), gamePlayer.getPort());
+                //log.info("set deputy");
                 networkStorage.getMainRoles().setDeputy(deputyHostNetworkInfo);
                 //log.info("Set deputy " + gamePlayer.getName() + " " + gamePlayer.getRole());
                 networkStorage.updateMainRoles(hostNetworkInfo, deputyHostNetworkInfo);
@@ -100,12 +104,15 @@ public class MessageHandler implements Runnable {
         });
     }
 
-    private void joinHandler(SnakesProto.GameMessage gameMessage, HostNetworkInfo hostNetworkInfo, NodeInfo sender) {
-        if (sender != null) {
+    private void joinHandler(SnakesProto.GameMessage gameMessage, HostNetworkInfo hostNetworkInfo) {
+        SnakesProto.GameMessage.JoinMsg joinMsg = gameMessage.getJoin();
+        var time = networkStorage.getJoinAttempts().get(hostNetworkInfo);
+        if (time != null && System.currentTimeMillis() - time < 1000) {
             sendAnswer(-1, gameMessage);
+            networkStorage.getJoinAttempts().put(hostNetworkInfo, System.currentTimeMillis());
             return;
         }
-        SnakesProto.GameMessage.JoinMsg joinMsg = gameMessage.getJoin();
+        networkStorage.getJoinAttempts().put(hostNetworkInfo, System.currentTimeMillis());
         SnakesProto.NodeRole realRole = controller.checkDeputy(joinMsg.getRequestedRole());
         int playerId = controller.joinMessage(joinMsg, hostNetworkInfo, realRole);
         sendAnswer(playerId, gameMessage);
@@ -126,7 +133,7 @@ public class MessageHandler implements Runnable {
         SnakesProto.GameMessage.RoleChangeMsg roleChangeMsg = gameMessage.getRoleChange();
         if (roleChangeMsg.hasReceiverRole()) {
             networkStorage.getMainRoles().setSelf(roleChangeMsg.getReceiverRole());
-        } else if(roleChangeMsg.getSenderRole() == SnakesProto.NodeRole.DEPUTY) {
+        } else if (roleChangeMsg.getSenderRole() == SnakesProto.NodeRole.DEPUTY) {
             networkStorage.getMainRoles().setDeputy(hostNetworkInfo);
         } else {
             networkStorage.getMainRoles().setMaster(hostNetworkInfo);

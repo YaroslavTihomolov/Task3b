@@ -7,9 +7,11 @@ import ru.nsu.ccfit.tihomolov.task3b.game.controller.Observer;
 import ru.nsu.ccfit.tihomolov.task3b.exception.SquareNotFoundException;
 import ru.nsu.ccfit.tihomolov.task3b.network.storage.HostNetworkInfo;
 import ru.nsu.ccfit.tihomolov.task3b.proto.SnakesProto;
+
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.*;
+
 import static ru.nsu.ccfit.tihomolov.task3b.context.Context.PERCENT_50;
 
 
@@ -77,7 +79,7 @@ public class Game implements Observable, Runnable {
                     if (!player.hasIpAddress()) {
                         hostNetworkInfo = lastMasterNetworkInfo;
                         newRole = SnakesProto.NodeRole.NORMAL;
-                    } else if (player.getIpAddress().equals(selfHostNetworkInfo.getIp().toString().substring(1)) &&
+                    } else if (HostNetworkInfo.handleIp(player.getIpAddress()).equals(HostNetworkInfo.handleIp(selfHostNetworkInfo.getIp().toString())) &&
                             player.getPort() == selfHostNetworkInfo.getPort()) {
                         try {
                             newRole = SnakesProto.NodeRole.MASTER;
@@ -86,7 +88,8 @@ public class Game implements Observable, Runnable {
                             throw new RuntimeException(e);
                         }
                     } else {
-                        hostNetworkInfo = initHostNetworkInfo(player.getIpAddress(), player.getPort());
+                        String ip = HostNetworkInfo.handleIp(player.getIpAddress());
+                        hostNetworkInfo = initHostNetworkInfo(ip, player.getPort());
                     }
                     playersId.put(hostNetworkInfo, player.getId());
                     players.put(player.getId(), Player.updateRole(player, newRole));
@@ -94,9 +97,7 @@ public class Game implements Observable, Runnable {
                 });
 
         gameState.getSnakesList()
-                .forEach(snake -> {
-                    snakes.put(snake.getPlayerId(), new Snake(field, snake.getPointsList(), snake.getPlayerId(), snake.getHeadDirection()));
-                });
+                .forEach(snake -> snakes.put(snake.getPlayerId(), new Snake(field, snake.getPointsList(), snake.getPlayerId(), snake.getHeadDirection())));
 
         this.foodStatic = config.getFoodStatic();
     }
@@ -140,18 +141,18 @@ public class Game implements Observable, Runnable {
     }
 
     public void run() {
-       while (!Thread.currentThread().isInterrupted()) {
-           try {
-               makeMove();
-               checkCrashes();
-               addFood();
-               notifyGameState();
-               Thread.sleep(gameConfig.getStateDelayMs());
-           } catch (InterruptedException e) {
-               log.error(e.getMessage());
-               Thread.currentThread().interrupt();
-           }
-       }
+        while (!Thread.currentThread().isInterrupted()) {
+            try {
+                makeMove();
+                checkCrashes();
+                addFood();
+                notifyGameState();
+                Thread.sleep(gameConfig.getStateDelayMs());
+            } catch (InterruptedException e) {
+                log.error(e.getMessage());
+                Thread.currentThread().interrupt();
+            }
+        }
     }
 
     public void addFood() {

@@ -31,7 +31,9 @@ public class PlayersScheduler implements Runnable {
 
     @Override
     public void run() {
-        while (networkStorage.getLastSendTime() == null || networkStorage.getMainRoles().getMaster() == null) {
+        while (networkStorage.getLastSendTime() == null ||
+                networkStorage.getMainRoles().getMaster() == null ||
+                networkStorage.getMainRoles().getDeputy() == null) {
             //log.info(networkStorage.getLastSendTime() + " " + networkStorage.getMainRoles().getMaster());
             try {
                 Thread.sleep(delay);
@@ -59,6 +61,9 @@ public class PlayersScheduler implements Runnable {
                 if (networkStorage.getMainRoles().getSelf() == SnakesProto.NodeRole.MASTER)
                     gameController.handleAfkPlayer(afkPlayer);
             });
+            if (networkStorage.getMainRoles().getDeputy() == null) {
+                findNewDeputy();
+            }
             try {
                 Thread.sleep(1);
             } catch (InterruptedException e) {
@@ -76,7 +81,7 @@ public class PlayersScheduler implements Runnable {
             networkStorage.getMainRoles().setMaster(networkStorage.getMainRoles().getDeputy());
             networkStorage.addPlayer(networkStorage.getMainRoles().getDeputy(), SnakesProto.NodeRole.MASTER);
         } else if (networkStorage.getMainRoles().getSelf() == SnakesProto.NodeRole.MASTER && nodeInfo.getRole() == SnakesProto.NodeRole.DEPUTY) {
-            findNewDeputy();
+            networkStorage.getMainRoles().setDeputy(null);
         } else if (networkStorage.getMainRoles().getSelf() == SnakesProto.NodeRole.DEPUTY && nodeInfo.getRole() == SnakesProto.NodeRole.MASTER) {
             gameController.continueGame(hostNetworkInfo, networkStorage.getMainRoles().getDeputy());
             gameController.updatePlayersList();

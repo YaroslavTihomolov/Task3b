@@ -34,7 +34,6 @@ public class ReceiverUDP implements Runnable {
         while (!Thread.currentThread().isInterrupted()) {
             long timeOFStartReceive = System.currentTimeMillis();
             while (System.currentTimeMillis() - timeOFStartReceive < PERIOD) {
-                log.info("Recive");
                 receive();
             }
         }

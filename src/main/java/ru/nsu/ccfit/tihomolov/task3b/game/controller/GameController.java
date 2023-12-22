@@ -77,16 +77,17 @@ public class GameController implements Observer, GameListObservable {
 
     public void updatePlayersList() {
         lastGameState.getPlayers().getPlayersList()
-                        .forEach(player -> {
-                            if (player.hasIpAddress()) {
-                                try {
-                                    HostNetworkInfo hostNetworkInfo = new HostNetworkInfo(InetAddress.getByName(player.getIpAddress()), player.getPort());
-                                    networkController.getNetworkStorage().addPlayer(hostNetworkInfo, player.getRole());
-                                } catch (UnknownHostException e) {
-                                    throw new RuntimeException(e);
-                                }
-                            }
-                        });
+                .forEach(player -> {
+                    if (player.hasIpAddress() && player.getRole() != SnakesProto.NodeRole.MASTER) {
+                        try {
+                            String ip = HostNetworkInfo.handleIp(player.getIpAddress());
+                            HostNetworkInfo hostNetworkInfo = new HostNetworkInfo(InetAddress.getByName(ip), player.getPort());
+                            networkController.getNetworkStorage().addPlayer(hostNetworkInfo, player.getRole());
+                        } catch (UnknownHostException e) {
+                            throw new RuntimeException(e);
+                        }
+                    }
+                });
     }
 
     public void steerMessage(SnakesProto.GameMessage.SteerMsg steerMsg, HostNetworkInfo hostNetworkInfo) {
@@ -103,10 +104,10 @@ public class GameController implements Observer, GameListObservable {
             game.addMove(new HostNetworkInfo(ip, port), move);
         } else {
             networkController.addMessage(curGameInfo.getGameName(), GameMessageCreator.initGameMessage(
-                                                                        SnakesProto.GameMessage.SteerMsg
-                                                                        .newBuilder()
-                                                                        .setDirection(move)
-                                                                        .build()));
+                    SnakesProto.GameMessage.SteerMsg
+                            .newBuilder()
+                            .setDirection(move)
+                            .build()));
         }
     }
 
@@ -159,6 +160,7 @@ public class GameController implements Observer, GameListObservable {
         networkController.setMasterInfo(gameInfo.getGameName());
         networkController.startSchedulePlayers(curGameInfo.getConfig().getStateDelayMs());
         networkController.addMessage(gameInfo.getGameName(), GameMessageCreator.initGameMessage(joinMsg));
+        this.role = joinMsg.getRequestedRole();
     }
 
     public SnakesProto.NodeRole checkDeputy(SnakesProto.NodeRole role) {

@@ -19,7 +19,7 @@ public class ServiceUDP {
     public ServiceUDP(NetworkStorage networkStorage, GameController gameController) throws IOException {
         DatagramSocket datagramSocket = new DatagramSocket();
         SocketAddress mcastaddr = new java.net.InetSocketAddress(InetAddress.getByName("239.192.0.4"), 9192);
-        datagramSocket.joinGroup(mcastaddr, null);
+        datagramSocket.joinGroup(mcastaddr, NetworkInterface.getByName("eth1"));
         this.receiverUDP = new ReceiverUDP(networkStorage, datagramSocket, gameController);
         this.senderUDP = new SenderUDP(datagramSocket, networkStorage);
         datagramSocket.setSoTimeout(TIMEOUT_SOCKET);

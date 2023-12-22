@@ -6,6 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import ru.nsu.ccfit.tihomolov.task3b.game.model.MainNodeInfo;
 import ru.nsu.ccfit.tihomolov.task3b.proto.SnakesProto;
 
+import java.time.OffsetDateTime;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -20,6 +21,8 @@ public class NetworkStorage {
     private final ConcurrentHashMap<Long, Message> messagesToSend = new ConcurrentHashMap<>();
     @Getter
     private final MainRoles mainRoles = new MainRoles();
+    @Getter
+    private final Map<HostNetworkInfo, Long> joinAttempts = new ConcurrentHashMap<>();
 
     public void addPlayer(HostNetworkInfo hostNetworkInfo, SnakesProto.NodeRole role) {
         players.put(hostNetworkInfo, new NodeInfo(System.currentTimeMillis(), role));
