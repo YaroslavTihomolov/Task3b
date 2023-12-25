@@ -24,7 +24,7 @@ public class PlayersScheduler implements Runnable {
 
     public PlayersScheduler(NetworkStorage networkStorage, long delay, GameController gameController) {
         this.networkStorage = networkStorage;
-        this.delay = delay / 10;
+        this.delay = delay / 5;
         this.afkDelay = this.delay * 8;
         this.gameController = gameController;
     }
@@ -62,6 +62,7 @@ public class PlayersScheduler implements Runnable {
                     gameController.handleAfkPlayer(afkPlayer);
             });
             if (networkStorage.getMainRoles().getDeputy() == null) {
+                System.out.println("find new deputy");
                 findNewDeputy();
             }
             try {

@@ -22,8 +22,8 @@
         </Group>
     </Pane>
     <Line endX="100.0" layoutX="385.0" layoutY="254.0" rotate="90.0" startX="-150.0" stroke="#465058" strokeWidth="2.0" />
-    <TextField fx:id="width" layoutX="400.0" layoutY="215.0" prefHeight="41.0" prefWidth="248.0" promptText="Ширина поля в клетках (от 10 до 100)" style="-fx-background-color: #2A363F; -fx-border-color: #465058; -fx-text-fill: #FFFFFF;" text="20" />
-    <TextField fx:id="height" layoutX="400.0" layoutY="275.0" prefHeight="41.0" prefWidth="248.0" promptText="Высота поля в клетках (от 10 до 100)" style="-fx-background-color: #2A363F; -fx-border-color: #465058; -fx-text-fill: #FFFFFF;" text="20" />
+    <TextField fx:id="width" layoutX="400.0" layoutY="215.0" prefHeight="41.0" prefWidth="248.0" promptText="Ширина поля в клетках (от 10 до 100)" style="-fx-background-color: #2A363F; -fx-border-color: #465058; -fx-text-fill: #FFFFFF;" text="40" />
+    <TextField fx:id="height" layoutX="400.0" layoutY="275.0" prefHeight="41.0" prefWidth="248.0" promptText="Высота поля в клетках (от 10 до 100)" style="-fx-background-color: #2A363F; -fx-border-color: #465058; -fx-text-fill: #FFFFFF;" text="40" />
     <TextField fx:id="delay" layoutX="400.0" layoutY="395.0" prefHeight="41.0" prefWidth="248.0" promptText="Задержка между ходами (от 100 до 3000)" style="-fx-background-color: #2A363F; -fx-border-color: #465058; -fx-text-fill: #FFFFFF;" text="200" />
     <TextField fx:id="foodCount" layoutX="400.0" layoutY="335.0" prefHeight="41.0" prefWidth="248.0" promptText="Количество клеток с едой (от 0 до 100)" style="-fx-background-color: #2A363F; -fx-border-color: #465058; -fx-text-fill: #FFFFFF;" text="1" />
     <Button layoutX="426.0" layoutY="445.0" mnemonicParsing="false" onAction="#buttonHandler" prefHeight="28.0" prefWidth="180.0" style="-fx-background-color: #27ae60; -fx-text-fill: #ffffff;" text="Создать игру" />

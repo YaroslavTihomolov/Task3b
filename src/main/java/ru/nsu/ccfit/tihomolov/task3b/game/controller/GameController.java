@@ -69,6 +69,7 @@ public class GameController implements Observer, GameListObservable {
     }
 
     public void continueGame(HostNetworkInfo lastMasterNetworkInfo, HostNetworkInfo selfHostNetworkInfo) {
+        System.out.println(lastGameState);
         this.game = new Game(lastGameState, curGameInfo.getConfig(), lastMasterNetworkInfo, selfHostNetworkInfo, curGameInfo.getGameName());
         StateOrder.setStateOrder(lastGameState.getStateOrder() + 1);
         log.info("Create copy of game");

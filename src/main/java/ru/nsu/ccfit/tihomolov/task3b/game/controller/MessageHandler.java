@@ -33,6 +33,7 @@ public class MessageHandler implements Runnable {
 
     private void sendAnswer(int playerId, SnakesProto.GameMessage gameMessage) {
         if (playerId > 0) {
+            System.out.println("PlayerID: " + playerId);
             networkStorage.addToMessageToSend(new Message(gameMessage.getMsgSeq(),
                     GameMessageCreator.initGameMessage(ack, playerId),
                     SnakesProto.GameMessage.TypeCase.ACK, packet.getAddress(), packet.getPort()));
